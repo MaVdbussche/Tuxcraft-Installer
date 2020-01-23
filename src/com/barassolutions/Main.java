@@ -1,6 +1,7 @@
 package com.barassolutions;
 
-import com.sun.istack.internal.NotNull;
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,14 +19,14 @@ public class Main {
     public static void main(String[] args) {
 
         /*Extract the archive*/
-        Config.unzippedArchive = extract(Config.updateArchive);
+        extract(Values.updateArchive, Values.unzippedArchive);
 
         /*****
          * 1) check if Tuxcraft already exists (update vs fresh install)
          */
         List<File> existingTuxcraftInstances = new LinkedList<>();
 
-        List<File> existingInstances = Arrays.asList(Objects.requireNonNull(Config.rootInstancesFolder.toFile().listFiles()));
+        List<File> existingInstances = Arrays.asList(Objects.requireNonNull(Values.rootInstancesFolder.toFile().listFiles()));
         existingInstances.forEach(dir -> {
             if(dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")){
                 /*List the files in this tuxcraft directory*/
@@ -44,7 +45,7 @@ public class Main {
         existingTuxcraftInstances.sort(null);
 
         boolean freshInstall = existingTuxcraftInstances.isEmpty();
-        Path newFolder = new File(Config.rootInstancesFolder.toString() + "/" + Config.unzippedArchive.getName()).toPath();
+        Path newFolder = new File(Values.rootInstancesFolder.toString() + "/" + Values.unzippedArchive.getName()).toPath();
         Set<Path> preservedFiles;
 
 
@@ -69,7 +70,7 @@ public class Main {
                 e.printStackTrace();
                 System.out.println("The copy/move of directory \"" + oldInstance.toString() + "\" has probably failed due to an IOException error.");
             }
-            preservedFiles = loadWhitelist(Config.unzippedArchive);
+            preservedFiles = loadWhitelist(Values.unzippedArchive);
         }
 
 
@@ -77,9 +78,11 @@ public class Main {
          * 3) Proceed to copy/move
          */
         try {
-            Files.walk(Config.unzippedArchive.toPath()).filter(Files::isRegularFile).forEach(file -> move(file, newFolder, preservedFiles));
+            Files.walk(Values.unzippedArchive.toPath()).filter(Files::isRegularFile).forEach(file -> move(file, newFolder, preservedFiles));
         } catch (IOException e){
-            //TODO
+            System.err.print("An IOException error occurred during the copy/move of a file : " + e.getMessage());
+            System.err.println("Skipping it.");
+            e.printStackTrace();
         }
     }
 
@@ -91,19 +94,21 @@ public class Main {
         }
     }
 
-    @NotNull
     private static Set<Path> loadWhitelist(File whitelistFile){
         //TODO read the whitelist json
         return null;
     }
 
-    private static File extract(File archive){
-        //TODO
-        return null;
+    private static void extract(File archive, File destination){
+        try {
+            ZipFile zipFile = new ZipFile(archive);
+            zipFile.extractAll(destination.toString());
+        } catch (ZipException e) {
+            e.printStackTrace();
+        }
     }
 
-    // Extract (2) to (1) -> what to replace, what to ignore ?
-    public static class Config{
+    public static class Values {
         static Path rootInstancesFolder; // This is an absolute path obtained from the user, WITHOUT trailing /
         static File updateArchive; // This is an absolute path to the zip archive, obtained from the user, WITHOUT trailing /
         static File unzippedArchive; // This is an absolute path to the unzipped folder, WITHOUT trailing /

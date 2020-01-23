@@ -26,7 +26,7 @@ public class Mover {
         try {
             Files.copy(source, dest,
                     replace ? StandardCopyOption.REPLACE_EXISTING : null,
-                    Main.Config.copyAttributes ? StandardCopyOption.COPY_ATTRIBUTES : null
+                    Main.Values.copyAttributes ? StandardCopyOption.COPY_ATTRIBUTES : null
             );
             return true;
         } catch (IOException e) {
