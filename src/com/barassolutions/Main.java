@@ -3,10 +3,17 @@ package com.barassolutions;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
@@ -95,8 +102,22 @@ public class Main {
     }
 
     private static Set<Path> loadWhitelist(File whitelistFile){
-        //TODO read the whitelist json
+        JSONParser jsonParser = new JSONParser();
+        try(FileReader fr = new FileReader(whitelistFile)){
+            Object obj = jsonParser.parse(fr);
+            return parseObject((JSONObject) obj);
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+        }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<Path> parseObject(JSONObject pathsObject){
+        Set<Path> out = new HashSet<>();
+        JSONArray pathsList = (JSONArray) pathsObject.get("paths");
+        pathsList.forEach(elem -> out.add(Paths.get((String)elem)));
+        return out;
     }
 
     private static void extract(File archive, File destination){
