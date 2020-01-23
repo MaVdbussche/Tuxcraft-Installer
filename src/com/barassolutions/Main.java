@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
@@ -26,7 +25,7 @@ public class Main {
          */
         List<File> existingTuxcraftInstances = new LinkedList<>();
 
-        List<File> existingInstances = Arrays.asList(Config.rootInstancesFolder.toFile().listFiles());
+        List<File> existingInstances = Arrays.asList(Objects.requireNonNull(Config.rootInstancesFolder.toFile().listFiles()));
         existingInstances.forEach(dir -> {
             if(dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")){
                 /*List the files in this tuxcraft directory*/
