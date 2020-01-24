@@ -84,20 +84,29 @@ public class Main {
         /*****
          * 3) Proceed to copy/move
          */
-        try {
+        copyRecursively(Values.unzippedArchive.toPath(), preservedFiles);
+        /*try {
             Files.walk(Values.unzippedArchive.toPath()).filter(Files::isRegularFile).forEach(file -> move(file, newFolder, preservedFiles));
         } catch (IOException e){
             System.err.print("An IOException error occurred during the copy/move of a file : " + e.getMessage());
             System.err.println("Skipping it.");
             e.printStackTrace();
-        }
+        }*/
     }
 
-    private static void move(Path file, Path newFolder, Set<Path> preservedFiles){
-        if (preservedFiles.contains(file)){// We must preserve this file
-            return; // Do nothing
-        } else {
-            Mover.moveFile(true, file, newFolder); //TODO use return value to check for soft errors
+    private static void copyRecursively(Path folderRoot, Set<Path> preservedFiles){
+        //TODO reprendre ici, mon cerveau fond
+        //Depth-first -> stack
+        Stack<File> frontier = new Stack<>();
+        Collections.addAll(frontier, Objects.requireNonNull(folderRoot.toFile().listFiles()));
+
+        while(! frontier.empty()){
+            File newFile = frontier.pop();
+            Path filePathRelative = folderRoot.relativize(Paths.get(folderRoot.toString(), newFile.toString())); // Path of the file relative to the instance folder root
+            if(! preservedFiles.contains(filePathRelative)){
+                /*This file will be overwritten*/
+                Mover.moveFile(true, filePathRelative.toAbsolutePath(), null);
+            }
         }
     }
 
@@ -111,7 +120,6 @@ public class Main {
         }
         return null;
     }
-
     @SuppressWarnings("unchecked")
     private static Set<Path> parseObject(JSONObject pathsObject){
         Set<Path> out = new HashSet<>();
