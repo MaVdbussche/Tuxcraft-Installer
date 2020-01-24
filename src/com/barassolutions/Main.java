@@ -7,8 +7,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.*;
 
 public class Main {
@@ -27,9 +24,9 @@ public class Main {
 
     public static void main(String[] args) {
 
-        initGui();
+        Gui.init();
         try {
-            Thread.sleep(20000);
+            Thread.sleep(Long.MAX_VALUE);  // `pgrep -x java | kill` to exit the program :))))))
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -102,42 +99,6 @@ public class Main {
             System.err.println("Skipping it.");
             e.printStackTrace();
         }*/
-    }
-
-    private static void initGui() {
-        // Frame setup
-        JFrame frame = new JFrame("Tuxcraft Installer");
-        frame.setLayout(new GridLayout(3, 3, 20, 20));
-        frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // MultiMC path selection row
-        JLabel mmcLabel = new JLabel("MultiMC instances folder:");
-        JTextField mmcField = new JTextField(255);
-        JButton mmcBrowse = new JButton("Browse");
-
-        // Instance zip path selection row
-        JLabel zipLabel = new JLabel("Instance Archive path:");
-        JTextField zipField = new JTextField(255);
-        JButton zipBrowse = new JButton("Browse");
-
-        // Next button
-        JButton nextButton = new JButton("Next");
-
-
-        frame.add(mmcLabel);
-        frame.add(mmcField);
-        frame.add(mmcBrowse);
-        frame.add(zipLabel);
-        frame.add(zipField);
-        frame.add(zipBrowse);
-        frame.add(new JPanel());
-        frame.add(new JPanel());
-        frame.add(nextButton);
-        // Finalize window and display
-        frame.setSize(400, 400);
-        frame.pack();
-        frame.setVisible(true);
     }
 
     private static void copyRecursively(Path folderRoot, Set<Path> preservedFiles){
