@@ -7,9 +7,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import javax.swing.*;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,6 +92,11 @@ public class Main {
                 System.err.println("Skipping it.");
                 e.printStackTrace();
             }*/
+        }
+        catch (Exception e) {
+            StringBuilder msg = new StringBuilder("An error occurred, stacktrace (most recent up):\n");
+            for( StackTraceElement stackElem : e.getStackTrace()) msg.append(stackElem.toString());
+            JOptionPane.showMessageDialog(null, msg.toString(), "Oh no !", JOptionPane.ERROR_MESSAGE);
         }
         finally {
             Gui.exit();
