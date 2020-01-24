@@ -27,12 +27,14 @@ public class Gui {
             this.field = field;
             chooser = new JFileChooser();
             chooser.setFileFilter(filter);
+            chooser.setFileHidingEnabled(false);
         }
 
         BrowserListener(JTextField field, int fileSelectionMode) {
             this.field = field;
             chooser = new JFileChooser();
             chooser.setFileSelectionMode(fileSelectionMode);
+            chooser.setFileHidingEnabled(false);
         }
 
         @Override
@@ -99,23 +101,24 @@ public class Gui {
             if (!mmcFolder.isDirectory())
                 JOptionPane.showMessageDialog(null, "\"" + mmcField.getText() + "\" is not a directory", "Oh no !",
                         JOptionPane.WARNING_MESSAGE);
-            else if (!new File(mmcFolder, "instgroups.json").isFile())
-                JOptionPane.showMessageDialog(null,
-                        "You did not specified a valid MultiMC instances folder",
-                        "Oh no !", JOptionPane.WARNING_MESSAGE);
+            //else if (!new File(mmcFolder, "instgroups.json").isFile()) //TODO lolnope -> check plutôt le contenu du parent
+            //    JOptionPane.showMessageDialog(null,
+            //            "You did not specify a valid MultiMC instances folder",
+            //            "Oh no !", JOptionPane.WARNING_MESSAGE);
             else if (!zipFile.isFile())
-                JOptionPane.showMessageDialog(null, "\"" + zipField.getText() + "\" does not exists", "Oh no !",
+                JOptionPane.showMessageDialog(null, "\"" + zipField.getText() + "\" does not exist", "Oh no !",
                         JOptionPane.WARNING_MESSAGE);
             else if (!Pattern.matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9].*\\.zip", zipField.getText()))
                 JOptionPane.showMessageDialog(null,
-                        "The file you specified either is ot a TuxCraft instance, or has been badly renamed.\n" +
+                        "The file you specified either is not a TuxCraft instance, or it has been badly renamed.\n" +
                                 "If this is the case, please rename in as `TuxCraft-x.x.xx.zip, replacing `x` " +
                                 "appropriately by the version numbers.", "Oh no !", JOptionPane.WARNING_MESSAGE);
             else {
-                Main.Values.rootInstancesFolder = Paths.get(mmcFolder.getAbsolutePath());
-                Main.Values.updateArchive = zipFile;
-                Main.Values.unzippedArchive = new File(Main.Values.rootInstancesFolder.toString(),
-                        zipFile.getName().replaceAll("\\.zip$", ""));
+                Main.Values.rootInstancesFolder = mmcFolder.getAbsoluteFile();
+                Main.Values.updateArchive = zipFile.getAbsoluteFile();
+                Main.Values.unzippedArchive = new File(Main.Values.updateArchive.getParent(),
+                        zipFile.getName().replaceAll("\\.zip$", "")).getAbsoluteFile();
+                //TODO aussi, empêcher de mettre le zip dans le dossier instances de MultiMC (comparer rootInstancesFolder et updateArchive)
                 // Deactivate all event handling
                 mmcField.setEditable(false);
                 zipField.setEditable(false);
@@ -134,8 +137,8 @@ public class Gui {
         frame.setVisible(true);
 
         /*START OF DEV SHIT*/
-        mmcField.setText("/home/morgane/doc/projects/dev/Tuxcraft-Installer/instances");
-        zipField.setText("/home/morgane/doc/dwl/TuxCraft-1.1.01.zip");
+        mmcField.setText("/home/barasingha/.local/share/multimc/instances");
+        zipField.setText("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.00.zip");
         /*END OF DEV SHIT*/
 
 
