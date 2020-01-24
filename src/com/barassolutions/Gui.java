@@ -7,7 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -99,23 +98,25 @@ public class Gui {
             if (!mmcFolder.isDirectory())
                 JOptionPane.showMessageDialog(null, "\"" + mmcField.getText() + "\" is not a directory", "Oh no !",
                         JOptionPane.WARNING_MESSAGE);
-            else if (!new File(mmcFolder, "instgroups.json").isFile())
-                JOptionPane.showMessageDialog(null,
-                        "You did not specified a valid MultiMC instances folder",
-                        "Oh no !", JOptionPane.WARNING_MESSAGE);
             else if (!zipFile.isFile())
                 JOptionPane.showMessageDialog(null, "\"" + zipField.getText() + "\" does not exists", "Oh no !",
                         JOptionPane.WARNING_MESSAGE);
-            else if (!Pattern.matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9].*\\.zip", zipField.getText()))
+            else if (!Pattern.matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9]\\.zip", zipField.getText()))
                 JOptionPane.showMessageDialog(null,
                         "The file you specified either is ot a TuxCraft instance, or has been badly renamed.\n" +
                                 "If this is the case, please rename in as `TuxCraft-x.x.xx.zip, replacing `x` " +
                                 "appropriately by the version numbers.", "Oh no !", JOptionPane.WARNING_MESSAGE);
             else {
-                Main.Values.rootInstancesFolder = Paths.get(mmcFolder.getAbsolutePath());
-                Main.Values.updateArchive = zipFile;
-                Main.Values.unzippedArchive = new File(Main.Values.rootInstancesFolder.toString(),
-                        zipFile.getName().replaceAll("\\.zip$", ""));
+                Main.Values.rootInstancesFolder = mmcFolder.getAbsoluteFile().toPath();
+                Main.Values.updateArchive = zipFile.getAbsoluteFile();
+                Main.Values.unzippedArchive = new File(Main.Values.updateArchive.getParent(),
+                        zipFile.getName().replaceAll("\\.zip$", "")).getAbsoluteFile();
+                // If updateArchive is in MultiMC instances folder
+                if (Main.Values.rootInstancesFolder.equals(Main.Values.updateArchive.getParentFile())) {
+                    throw new RuntimeException("Unable to extract archive: Old instance copy would overwrite " +
+                            "extracted new instance. Please move archive outside MultiMC's instances folder.");
+                }
+
                 // Deactivate all event handling
                 mmcField.setEditable(false);
                 zipField.setEditable(false);
