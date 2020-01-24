@@ -5,11 +5,15 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 public class Gui {
+
+    private static final JFrame frame = new JFrame("Tuxcraft Installer");
 
     /**
      * An action listener (for clicks) for browse buttons.
@@ -37,16 +41,19 @@ public class Gui {
             if (ret == JFileChooser.APPROVE_OPTION)
                 field.setText(chooser.getSelectedFile().getAbsolutePath());
             else if (ret == JFileChooser.ERROR_OPTION)
-                JOptionPane.showMessageDialog(null,"Error", "Not UwU", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null,"Error, contact the developers or install manually :/",
+                        "Not UwU", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     /**
      * Initiates and displays the installer's GUI.
      */
-    static void init() {
+    static void initValues() {
+        AtomicBoolean wait = new AtomicBoolean(true); // this is basically a lock
+
         // Frame setup
-        JFrame frame = new JFrame("TuxCraft Installer");
+        frame.setSize(700, 300);
         frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new GridLayout(3, 1));
@@ -88,34 +95,54 @@ public class Gui {
 
         nextButton.addActionListener(actionEvent -> {
             File mmcFolder = new File(mmcField.getText());
-            if (!mmcFolder.isDirectory() || !new File(mmcFolder, "instgroups.json").isFile())
+            File zipFile = new File(zipField.getText());
+            if (!mmcFolder.isDirectory())
+                JOptionPane.showMessageDialog(null, "\"" + mmcField.getText() + "\" is not a directory", "Oh no !",
+                        JOptionPane.WARNING_MESSAGE);
+            else if (!new File(mmcFolder, "instgroups.json").isFile())
                 JOptionPane.showMessageDialog(null,
                         "You did not specified a valid MultiMC instances folder",
                         "Oh no !", JOptionPane.WARNING_MESSAGE);
-            else
-                JOptionPane.showMessageDialog(null, "TODO: implement ze program my dudes", "puet puet", JOptionPane.INFORMATION_MESSAGE);
+            else if (!zipFile.isFile())
+                JOptionPane.showMessageDialog(null, "\"" + zipField.getText() + "\" does not exists", "Oh no !",
+                        JOptionPane.WARNING_MESSAGE);
+            else if (!Pattern.matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9].*\\.zip", zipField.getText()))
+                JOptionPane.showMessageDialog(null,
+                        "The file you specified either is ot a TuxCraft instance, or has been badly renamed.\n" +
+                                "If this is the case, please rename in as `TuxCraft-x.x.xx.zip, replacing `x` " +
+                                "appropriately by the version numbers.", "Oh no !", JOptionPane.WARNING_MESSAGE);
+            else {
+                Main.Values.rootInstancesFolder = Paths.get(mmcFolder.getAbsolutePath());
+                Main.Values.updateArchive = zipFile;
+                Main.Values.unzippedArchive = new File(Main.Values.rootInstancesFolder.toString(),
+                        zipFile.getName().replaceAll("\\.zip$", ""));
+                // Deactivate all event handling
+                mmcField.setEditable(false);
+                zipField.setEditable(false);
+                mmcBrowse.removeActionListener(mmcBrowse.getActionListeners()[0]);
+                zipBrowse.removeActionListener(zipBrowse.getActionListeners()[0]);
+                nextButton.removeActionListener(nextButton.getActionListeners()[0]);
+                // Unlock main thread
+                wait.set(false);
+            }
         });
 
         frame.add(mmcPanel);
         frame.add(zipPanel);
         frame.add(nextPanel);
 
-        // Finalize window and display
-        frame.setSize(700, 300);
         frame.setVisible(true);
+
+        /*START OF DEV SHIT*/
+        mmcField.setText("/home/morgane/doc/projects/dev/Tuxcraft-Installer/instances");
+        zipField.setText("/home/morgane/doc/dwl/TuxCraft-1.1.01.zip");
+        /*END OF DEV SHIT*/
+
+
+        while (wait.get()) Thread.yield(); // wait until values initialised before returning
     }
 
-    /**
-     * Encapsulate a component into another default placement behavior, and return the parent component.
-     *
-     * Used to avoid creating a bunch of variables, not gonna lie.
-     *
-     * @param parent The parent component
-     * @param child The child component added to the parent
-     * @return The parent component
-     */
-    private static JComponent encapsulate(JComponent parent, JComponent child) {
-        parent.add(child);
-        return parent;
+    static void exit() {
+        frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
     }
 }
