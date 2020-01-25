@@ -87,14 +87,17 @@ class Gui {
 
   private static JPanel encapsulate(LayoutManager layoutManager, JComponent... components) {
     final JPanel panel = (layoutManager == null) ? new JPanel() : new JPanel(layoutManager);
-    for(JComponent component : components) panel.add(component);
+    for (JComponent component : components) {
+      panel.add(component);
+    }
     return panel;
   }
 
   /**
    * Creates a frame named TuxCraft Installer with given default close action.
    *
-   * @param closeAction The default close action of the frame, passed to JFrame.setDefaultCloseAction()
+   * @param closeAction The default close action of the frame,
+   *                    passed to JFrame.setDefaultCloseAction()
    * @return A new JFrame properly setup
    */
   private static JFrame makeFrame(int closeAction) {
@@ -109,23 +112,25 @@ class Gui {
   /**
    * Creates a JPanel containing an path entry UI.
    *
-   * @param title The label of the path entry
-   * @param field The text field to use for the path entry
-   * @param mode The file selection mode for file browsing, passed to a JFileChooser
+   * @param title  The label of the path entry
+   * @param field  The text field to use for the path entry
+   * @param mode   The file selection mode for file browsing, passed to a JFileChooser
    * @param filter The file filter for file browsing, passed to a JFileChooser
    * @return A new JPanel properly setup
    */
-  private static JPanel makePathEntry(String title, JTextField field, int mode, FileNameExtensionFilter filter) {
+  private static JPanel makePathEntry(String title, JTextField field, int mode,
+      FileNameExtensionFilter filter) {
     field.setEditable(true);
     final JButton browseButton = new JButton(new BrowseButtonAction(field, filter, mode));
     browseButton.setText("Browse");
-    return encapsulate( new FlowLayout(FlowLayout.LEFT), new JLabel(title), field, browseButton);
+    return encapsulate(new FlowLayout(FlowLayout.LEFT), new JLabel(title), field, browseButton);
   }
 
   /**
    * An action listener (for clicks) for browse buttons.
    */
   private static final class BrowseButtonAction extends AbstractAction {
+
     private final JTextField field;
     private final JFileChooser chooser;
 
@@ -153,6 +158,7 @@ class Gui {
   }
 
   private static final class NextButtonAction extends AbstractAction {
+
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
       final File mmcInstancesFolder = new File(mmcField.getText());
@@ -190,6 +196,7 @@ class Gui {
 
         // Clear up gui and switch to progress bar
         loadingFrame.pack();
+        loadingFrame.setLocation(initFrame.getLocation());
         loadingFrame.setVisible(true);
         initFrame.dispose();
 
@@ -211,17 +218,21 @@ class Gui {
     //mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
     //TODO EDIT at production !
     zipField = new JTextField("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.01.zip", 30);
-    //zipField = new JTextField("C:\\User\\" + System.getProperty("user.name") + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
+    //zipField = new JTextField("C:\\User\\" + System.getProperty("user.name")
+    // + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
     nextButton = new JButton(new NextButtonAction());
     loadingBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 6);
-    currentActionLabel = new JLabel("Tuxcraft installation should begin soon... Please be patient..");
+    currentActionLabel = new JLabel("Tuxcraft installation should begin soon... "
+        + "Please be patient..");
 
     nextButton.setText("Next");
     currentActionLabel.setVerticalAlignment(JLabel.CENTER);
 
     initFrame.add(encapsulate(null));
-    initFrame.add(makePathEntry("MultiMC instances folder:", mmcField, JFileChooser.DIRECTORIES_ONLY, null));
-    initFrame.add(makePathEntry("TuxCraft instance archive:", zipField, JFileChooser.FILES_AND_DIRECTORIES, new FileNameExtensionFilter("ZIP archive", "zip")));
+    initFrame.add(makePathEntry("MultiMC instances folder:", mmcField,
+        JFileChooser.DIRECTORIES_ONLY, null));
+    initFrame.add(makePathEntry("TuxCraft instance archive:", zipField,
+        JFileChooser.FILES_AND_DIRECTORIES, new FileNameExtensionFilter("ZIP archive", "zip")));
     initFrame.add(encapsulate(null));
     initFrame.add(encapsulate(new FlowLayout(FlowLayout.RIGHT), nextButton));
 

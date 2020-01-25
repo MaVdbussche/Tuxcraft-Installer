@@ -7,15 +7,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Stack;
+
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -40,34 +40,12 @@ public class Main {
 
       /*3) Check if Tuxcraft is already present in this MultiMC install (update vs fresh install)*/
       Gui.onInstancesCheck();
-      List<File> existingTuxcraftInstances = new LinkedList<>();
+      File existingTuxcraftInstance = findMostRecentInstance(Values.rootInstancesFolder);
 
-      File[] instances = Values.rootInstancesFolder.listFiles();
-      if (instances != null) {
-        Arrays.stream(instances)
-            .filter(dir ->
-                (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")))
-            .forEach(dir -> {
-              /*List the files in this tuxcraft directory*/
-              File[] content = dir.listFiles();
-              if (content != null) {
-                /*Look for a file called tuxcraft-update.json*/
-                if (Arrays.stream(content)
-                    .anyMatch(file -> file.getName().toLowerCase().equals(Values.updateFileName))) {
-                  /*This is a TuxCraft instance*/
-                  System.out
-                      .println("Found one existing TuxCraft instance, named " + dir.getName());
-                  existingTuxcraftInstances.add(dir);
-                }
-              } // else we skip it
-            });
-      }
-      existingTuxcraftInstances.sort(null);
-
-      boolean freshInstall = (existingTuxcraftInstances.size() == 0);
-      Path newFolder = Paths.get(Values.rootInstancesFolder.toString(),
-          Values.unzippedArchive.getName());
-      System.out.println("New Folder will be placed at " + newFolder.toString());
+      boolean freshInstall = (existingTuxcraftInstance == null);
+      File newFolder = new File(Values.rootInstancesFolder, Values.unzippedArchive.getName());
+      newFolder.mkdir();
+      System.out.println("New Folder will be placed at " + newFolder.getAbsolutePath());
       Set<Path> preservedFiles;
 
       if (freshInstall) {
@@ -80,25 +58,13 @@ public class Main {
         Gui.onCopyOld();
         System.out.println("Updating !");
         /*Make a copy of the instance folder*/
-        Path oldInstance = existingTuxcraftInstances.get(existingTuxcraftInstances.size() - 1)
-            .toPath();
-        try {
-          copyRecursively(oldInstance, newFolder, new HashSet<>());
-          System.out.println("Done copying the old instance folder.");
-        } catch (Exception e) {
-          System.err.print(
-              "An IOException error occurred during the copy/move of the directory : "
-                  + e.getMessage());
-          e.printStackTrace();
-          System.out.println("The copy/move of directory \"" + oldInstance.toString()
-              + "\" has probably failed due to an IOException error.");
-        }
+        copyFoldersContents(existingTuxcraftInstance, newFolder, new HashSet<>());
         preservedFiles = loadWhitelist(Values.unzippedArchive);
       }
 
       /*5) Proceed to copy/move the extracted archive to the instances folder*/
       Gui.onUpdating();
-      copyRecursively(Values.unzippedArchive.toPath(), newFolder, preservedFiles);
+      copyFoldersContents(Values.unzippedArchive, newFolder, preservedFiles);
 
     } finally {
       /*6) Delete the temporary extracted archive*/
@@ -110,68 +76,87 @@ public class Main {
       try {
         Thread.sleep(2000);
       } catch (InterruptedException ignored) {
+        //ignored
       }
       Gui.exit();
     }
   }
 
   /**
-   * Copies recursively a folder, including all its sub-contents, and REPLACES files with
-   * conflicting names. Allows to skip (not copy) certain files by passing them in the 3rd argument
+   * Returns the most recent Tuxcraft instance installed in this folder, according to the
+   * lexicographical order of the folder names. Version numbers are designed with this in mind.
    *
-   * @param sourceFolder   the Path to the source folder
-   * @param destFolder     the Path to the destination folder
-   * @param preservedFiles a Set of Path to files that will not by copied to the destination
+   * @param instancesFolder the instances folder of a MultiMC installation
+   * @return the last Tuxcraft instance installed in the given directory, or null if none was found.
    */
-  private static void copyRecursively(Path sourceFolder, Path destFolder,
-      Set<Path> preservedFiles) {
-    System.out.println("Importing new instance...");
-    System.out.println("This update will ignore " + preservedFiles.size() + " elements.");
-    int objects = 0;
-    //Classic depth-first tree scan, using a stack as a frontier
-    Stack<File> frontier = new Stack<>();
-    frontier.add(sourceFolder.toFile());
-
-    while (!frontier.empty()) {
-      // pop it
-      File newFile = frontier.pop();
-      // handle it
-      Path pathRelative = sourceFolder
-          .relativize(newFile.toPath()); // Path relative to the root of instance folder
-      // expand it (or not)
-      if (!preservedFiles.contains(pathRelative)) {
-        /*We have to bypass possible DirectoryNotEmptyExceptions, by checking if newFile is a
-        directory and is present at destination. If so, we can safely ignore it (not its content)*/
-        Path dest = destFolder.resolve(pathRelative);
-        //noinspection ConstantConditions
-        if (newFile.isDirectory() && dest.toFile().isDirectory() && Arrays
-            .asList(dest.toFile().list()).contains(newFile.getName())) {
-          /*Ignoring this one*/
-        } else {
-          Mover.moveFile(true, newFile.toPath(), dest);
-          objects++;
-        }
-        /*In any case, we have to treat the children of this file/folder*/
-        File[] children = newFile.listFiles();
-        if (children != null) {
-          Collections.addAll(frontier, children);
-        }
-      }
+  private static File findMostRecentInstance(File instancesFolder) {
+    List<File> tuxcraftInstances = new LinkedList<>();
+    File[] instances = instancesFolder.listFiles();
+    if (instances != null) {
+      Arrays.stream(instances)
+          .filter(dir ->
+              (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")))
+          .forEach(dir -> {
+            /*List the files in this tuxcraft directory*/
+            File[] content = dir.listFiles();
+            if (content != null) {
+              /*Look for a file called tuxcraft-update.json*/
+              if (Arrays.stream(content)
+                  .anyMatch(file -> file.getName().toLowerCase().equals(Values.updateFileName))) {
+                /*This is a TuxCraft instance*/
+                System.out
+                    .println("Found one existing TuxCraft instance, named " + dir.getName());
+                tuxcraftInstances.add(dir);
+              }
+            } // else we skip it
+          });
     }
-    System.out.println("Done copying " + objects + " objects.");
+    if (tuxcraftInstances.size() == 0) {
+      return null;
+    } else {
+      tuxcraftInstances.sort(null);
+      return tuxcraftInstances.get(tuxcraftInstances.size() - 1); //Returning the most recent one
+    }
   }
 
   /**
-   * Deletes recursively a File, including all its sub-contents if it denotes a directory.
-   * Be careful !
+   * Copies recursively a File, including all its sub-contents if it denotes a directory.
    *
-   * @param file   the Path to the folder to be deleted
+   * @param sourceInstanceFolder a valid instance folder
+   * @param destInstanceFolder   a directory. May be empty, or already contain a Tuxcraft instance
+   * @param preserved            Set of Paths to ignore. In other words, the files denoted by these
+   *                             paths won't be copied from sourceInstanceFolder
+   */
+  private static void copyFoldersContents(File sourceInstanceFolder, File destInstanceFolder,
+      Set<Path> preserved) {
+    if (sourceInstanceFolder.isDirectory() && destInstanceFolder.isDirectory()) {
+      //noinspection ConstantConditions
+      for (File f : sourceInstanceFolder.listFiles()) {
+        Path sourcePath = f.toPath().toAbsolutePath();
+        Path targetPath = destInstanceFolder.toPath().resolve(f.getName());
+        try {
+          Files.walkFileTree(sourcePath, new Mover.CopyFileVisitor(
+              sourcePath, targetPath, preserved));
+        } catch (IOException e) {
+          System.err.println("An error occurred while copying " + sourcePath + " !");
+        }
+      }
+    } else {
+      System.err.println("[CRITICAL] passed arguments are not directories !");
+    }
+  }
+
+  /**
+   * Deletes recursively a File, including all its sub-contents if it denotes a directory. Be
+   * careful !
+   *
+   * @param file the Path to the folder to be deleted
    */
   private static void deleteRecursively(File file) {
     File[] contents = file.listFiles();
     if (contents != null) {
       for (File f : contents) {
-        if (! Files.isSymbolicLink(f.toPath())) {
+        if (!Files.isSymbolicLink(f.toPath())) {
           deleteRecursively(f);
         }
       }
