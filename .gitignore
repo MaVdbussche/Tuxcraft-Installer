@@ -27,3 +27,6 @@ hs_err_pid*
 
 # Maven build dir
 target/*
+
+# Common manual tests dir
+instances/*
