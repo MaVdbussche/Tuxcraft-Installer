@@ -86,7 +86,7 @@ class Gui {
   }
 
   private static JPanel encapsulate(LayoutManager layoutManager, JComponent... components) {
-    final JPanel panel = (layoutManager == null)? new JPanel() : new JPanel(layoutManager);
+    final JPanel panel = (layoutManager == null) ? new JPanel() : new JPanel(layoutManager);
     for(JComponent component : components) panel.add(component);
     return panel;
   }
@@ -131,10 +131,12 @@ class Gui {
 
     BrowseButtonAction(JTextField field, FileNameExtensionFilter filter, int mode) {
       this.field = field;
-      chooser = new JFileChooser();
+      chooser = new JFileChooser(field.getText());
       chooser.setFileHidingEnabled(false);
       chooser.setFileSelectionMode(mode);
-      if (filter != null) chooser.setFileFilter(filter);
+      if (filter != null) {
+        chooser.setFileFilter(filter);
+      }
     }
 
     @Override
@@ -204,8 +206,12 @@ class Gui {
 
     initFrame = makeFrame(JFrame.EXIT_ON_CLOSE);
     loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE);
-    mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
-    zipField = new JTextField("C:\\User\\" + System.getProperty("user.name") + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
+    //TODO EDIT at production !
+    mmcField = new JTextField("/home/barasingha/.local/share/multimc/instances", 30);
+    //mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
+    //TODO EDIT at production !
+    zipField = new JTextField("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.01.zip", 30);
+    //zipField = new JTextField("C:\\User\\" + System.getProperty("user.name") + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
     nextButton = new JButton(new NextButtonAction());
     loadingBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 6);
     currentActionLabel = new JLabel("Tuxcraft installation should begin soon... Please be patient..");
