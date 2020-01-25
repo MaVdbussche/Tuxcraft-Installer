@@ -5,14 +5,15 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 public class Gui {
 
-    private static final JFrame frame = new JFrame("Tuxcraft Installer");
+    private static JFrame frame = new JFrame("Tuxcraft Installer");
+    private static final JProgressBar topBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 5);
+    private static final JLabel currentActionLabel = new JLabel();
 
     /**
      * An action listener (for clicks) for browse buttons.
@@ -119,12 +120,24 @@ public class Gui {
                             "extracted new instance. Please move archive outside MultiMC's instances folder.");
                 }
 
-                // Deactivate all event handling
-                mmcField.setEditable(false);
-                zipField.setEditable(false);
-                mmcBrowse.removeActionListener(mmcBrowse.getActionListeners()[0]);
-                zipBrowse.removeActionListener(zipBrowse.getActionListeners()[0]);
-                nextButton.removeActionListener(nextButton.getActionListeners()[0]);
+                // Clear up gui and switch to progress bar
+                JFrame oldFrame = frame;
+                frame = new JFrame("TuxCraft Installer");
+                JPanel panel = new JPanel();
+                frame.setLayout(new GridLayout(3, 1));
+                frame.setSize(700, 300);
+                frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                panel.add(topBar);
+                currentActionLabel.setVerticalAlignment(JLabel.CENTER);
+                currentActionLabel.setText("Tuxcraft installation should begin soon... Please be patient..");
+                frame.add(currentActionLabel);
+                frame.add(panel);
+                frame.add(new JPanel());
+                frame.pack();
+                frame.setVisible(true);
+                oldFrame.dispose();
+
                 // Unlock main thread
                 wait.set(false);
             }
@@ -145,7 +158,37 @@ public class Gui {
         while (wait.get()) Thread.yield(); // wait until values initialised before returning
     }
 
+    static void onExtract() {
+        topBar.setValue(1);
+        currentActionLabel.setText("Extracting instance...");
+    }
+
+    static void onInstancesCheck() {
+        topBar.setValue(2);
+        currentActionLabel.setText("Checking for older TuxCraft instances...");
+    }
+
+    static void onCopyOld() {
+        topBar.setValue(3);
+        topBar.setString("Copying latest installed instance...");
+    }
+
+    static void onSkipCopyOld() {
+        topBar.setValue(3);
+        currentActionLabel.setText("Skipping old instance copy");
+    }
+
+    static void onUpdating() {
+        topBar.setValue(4);
+        currentActionLabel.setText("Updating...");
+    }
+
+    static void onDone() {
+        topBar.setValue(topBar.getMaximum());
+        currentActionLabel.setText("Done.");
+    }
+
     static void exit() {
-        frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+        frame.dispose();
     }
 }

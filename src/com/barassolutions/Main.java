@@ -8,11 +8,11 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import javax.swing.*;
-import java.io.*;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class Main {
@@ -22,12 +22,14 @@ public class Main {
             Gui.initValues();
 
             /*Extract the archive*/
+            Gui.onExtract();
             extract(Values.updateArchive, Values.updateArchive.getParentFile());
 
 
             /*****
              * 1) check if Tuxcraft already exists (update vs fresh install)
              */
+            Gui.onInstancesCheck();
             List<File> existingTuxcraftInstances = new LinkedList<>();
 
             List<File> existingInstances = Arrays.asList(Objects.requireNonNull(Values.rootInstancesFolder.listFiles()));
@@ -59,6 +61,7 @@ public class Main {
              * 2.1) Case fresh install :
              */
             if (freshInstall) {
+                Gui.onSkipCopyOld();
                 System.out.println("Fresh install !");
                 preservedFiles = new HashSet<>();
             }
@@ -66,6 +69,7 @@ public class Main {
              * 2.2) Case update :
              */
             else {
+                Gui.onCopyOld();
                 System.out.println("Updating !");
                 /*Make a copy of the instance folder*/
                 Path oldInstance = existingTuxcraftInstances.get(existingTuxcraftInstances.size() - 1).toPath();
@@ -87,7 +91,11 @@ public class Main {
             /*****
              * 3) Proceed to copy/move
              */
+            Gui.onUpdating();
             copyRecursively(Values.unzippedArchive.toPath(), newFolder, preservedFiles);
+
+            Gui.onDone();
+            Thread.sleep(2000);
         }
         catch (Exception e) {
             StringBuilder msg = new StringBuilder("An error occurred, stacktrace (most recent up):\n");
