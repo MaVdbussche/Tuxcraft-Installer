@@ -44,6 +44,7 @@ public class Main {
 
       boolean freshInstall = (existingTuxcraftInstance == null);
       File newFolder = new File(Values.rootInstancesFolder, Values.unzippedArchive.getName());
+      //noinspection ResultOfMethodCallIgnored
       newFolder.mkdir();
       System.out.println("New Folder will be placed at " + newFolder.getAbsolutePath());
       Set<Path> preservedFiles;
@@ -161,6 +162,7 @@ public class Main {
         }
       }
     }
+    //noinspection ResultOfMethodCallIgnored
     file.delete();
   }
 
