@@ -18,7 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Set;
 
-public class Mover {
+class Mover {
 
 
   private static boolean isWhitelisted(Path elem, Set<Path> set) {
@@ -37,7 +37,7 @@ public class Mover {
     private final Set<Path> preserved;
     private final boolean preserve;
 
-    public CopyFileVisitor(Path sourcePath, Path targetPath, Set<Path> preservedFiles) {
+    CopyFileVisitor(Path sourcePath, Path targetPath, Set<Path> preservedFiles) {
       this.sourcePath = sourcePath;
       this.targetPath = targetPath;
       this.preserved = preservedFiles;
