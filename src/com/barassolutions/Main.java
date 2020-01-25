@@ -33,7 +33,6 @@ public class Main {
             List<File> existingInstances = Arrays.asList(Objects.requireNonNull(Values.rootInstancesFolder.listFiles()));
             existingInstances.forEach(dir -> {
                 if (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")) {
-                    System.out.println("Found one existing TuxCraft instance, named " + dir.getName());
                     /*List the files in this tuxcraft directory*/
                     File[] content = dir.listFiles();
                     if (content != null) {
@@ -42,6 +41,7 @@ public class Main {
                             if (file.getName().toLowerCase().equals(Values.updateFileName)) {
                                 /*This is a TuxCraft instance*/
                                 existingTuxcraftInstances.add(dir);
+                                System.out.println("Found one existing TuxCraft instance, named " + dir.getName());
                             } //else we skip it
                         });
                     } // else we skip it
