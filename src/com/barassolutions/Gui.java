@@ -1,14 +1,17 @@
 package com.barassolutions;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,32 +21,120 @@ import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class Gui {
+class Gui {
 
-  private static JFrame frame = new JFrame("Tuxcraft Installer");
-  private static final JProgressBar topBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 6);
-  private static final JLabel currentActionLabel = new JLabel();
+  private static final AtomicBoolean valuesInitiated;
+
+  private static final JFrame initFrame;
+  private static final JFrame loadingFrame;
+  private static final JTextField mmcField;
+  private static final JTextField zipField;
+  private static final JButton nextButton;
+  private static final JProgressBar loadingBar;
+  private static final JLabel currentActionLabel;
+
+  /**
+   * Initiates and displays the installer's GUI.
+   */
+  static void initValues() {
+    initFrame.pack();
+    initFrame.setVisible(true);
+
+    while (!valuesInitiated.get()) {
+      Thread.yield(); // wait until values initialized before returning
+    }
+  }
+
+  static void onExtract() {
+    loadingBar.setValue(1);
+    currentActionLabel.setText("Extracting instance...");
+  }
+
+  static void onInstancesCheck() {
+    loadingBar.setValue(2);
+    currentActionLabel.setText("Checking for older TuxCraft instances...");
+  }
+
+  static void onCopyOld() {
+    loadingBar.setValue(3);
+    currentActionLabel.setText("Copying latest installed instance...");
+  }
+
+  static void onSkipCopyOld() {
+    loadingBar.setValue(3);
+    currentActionLabel.setText("Skipping old instance copy");
+  }
+
+  static void onUpdating() {
+    loadingBar.setValue(4);
+    currentActionLabel.setText("Updating...");
+  }
+
+  static void onCleanup() {
+    loadingBar.setValue(5);
+    currentActionLabel.setText("Cleaning up...");
+  }
+
+  static void onDone() {
+    loadingBar.setValue(loadingBar.getMaximum());
+    currentActionLabel.setText("Done.");
+  }
+
+  static void exit() {
+    initFrame.dispose();
+    loadingFrame.dispose();
+  }
+
+  private static JPanel encapsulate(LayoutManager layoutManager, JComponent... components) {
+    final JPanel panel = (layoutManager == null)? new JPanel() : new JPanel(layoutManager);
+    for(JComponent component : components) panel.add(component);
+    return panel;
+  }
+
+  /**
+   * Creates a frame named TuxCraft Installer with given default close action.
+   *
+   * @param closeAction The default close action of the frame, passed to JFrame.setDefaultCloseAction()
+   * @return A new JFrame properly setup
+   */
+  private static JFrame makeFrame(int closeAction) {
+    final JFrame frame = new JFrame("TuxCraft Installer");
+    frame.setSize(new Dimension(700, 300));
+    frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    frame.setDefaultCloseOperation(closeAction);
+    frame.setLayout(new GridLayout(5, 1));
+    return frame;
+  }
+
+  /**
+   * Creates a JPanel containing an path entry UI.
+   *
+   * @param title The label of the path entry
+   * @param field The text field to use for the path entry
+   * @param mode The file selection mode for file browsing, passed to a JFileChooser
+   * @param filter The file filter for file browsing, passed to a JFileChooser
+   * @return A new JPanel properly setup
+   */
+  private static JPanel makePathEntry(String title, JTextField field, int mode, FileNameExtensionFilter filter) {
+    field.setEditable(true);
+    final JButton browseButton = new JButton(new BrowseButtonAction(field, filter, mode));
+    browseButton.setText("Browse");
+    return encapsulate( new FlowLayout(FlowLayout.LEFT), new JLabel(title), field, browseButton);
+  }
 
   /**
    * An action listener (for clicks) for browse buttons.
    */
-  private static final class BrowserListener implements ActionListener {
-
+  private static final class BrowseButtonAction extends AbstractAction {
     private final JTextField field;
     private final JFileChooser chooser;
 
-    BrowserListener(JTextField field, FileNameExtensionFilter filter) {
+    BrowseButtonAction(JTextField field, FileNameExtensionFilter filter, int mode) {
       this.field = field;
       chooser = new JFileChooser();
-      chooser.setFileFilter(filter);
       chooser.setFileHidingEnabled(false);
-    }
-
-    BrowserListener(JTextField field, int fileSelectionMode) {
-      this.field = field;
-      chooser = new JFileChooser();
-      chooser.setFileSelectionMode(fileSelectionMode);
-      chooser.setFileHidingEnabled(false);
+      chooser.setFileSelectionMode(mode);
+      if (filter != null) chooser.setFileFilter(filter);
     }
 
     @Override
@@ -59,55 +150,9 @@ public class Gui {
     }
   }
 
-  /**
-   * Initiates and displays the installer's GUI.
-   */
-  static void initValues() {
-    final AtomicBoolean wait = new AtomicBoolean(true); // this is basically a lock
-
-    // Frame setup
-    frame.setSize(700, 300);
-    frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setLayout(new GridLayout(3, 1));
-
-    // MultiMC path selection row
-    final JPanel mmcPanel = new JPanel();
-    final JLabel mmcLabel = new JLabel("MultiMC instances folder:");
-    final JTextField mmcField = new JTextField(255);
-    final JButton mmcBrowse = new JButton("Browse");
-
-    mmcPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-    mmcField.setEditable(true);
-    mmcBrowse.addActionListener(new BrowserListener(mmcField, JFileChooser.DIRECTORIES_ONLY));
-
-    mmcPanel.add(mmcLabel);
-    mmcPanel.add(mmcField);
-    mmcPanel.add(mmcBrowse);
-
-    // Instance zip path selection row
-    final JPanel zipPanel = new JPanel();
-    final JLabel zipLabel = new JLabel("Instance Archive path:");
-    final JTextField zipField = new JTextField(255);
-    final JButton zipBrowse = new JButton("Browse");
-
-    zipPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-    zipField.setEditable(true);
-    zipBrowse.addActionListener(
-        new BrowserListener(zipField, new FileNameExtensionFilter("ZIP archive", "zip")));
-
-    zipPanel.add(zipLabel);
-    zipPanel.add(zipField);
-    zipPanel.add(zipBrowse);
-
-    // Next button
-    final JPanel nextPanel = new JPanel();
-    final JButton nextButton = new JButton("Next");
-
-    nextPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-    nextPanel.add(nextButton);
-
-    nextButton.addActionListener(actionEvent -> {
+  private static final class NextButtonAction extends AbstractAction {
+    @Override
+    public void actionPerformed(ActionEvent actionEvent) {
       final File mmcInstancesFolder = new File(mmcField.getText());
       final File zipFile = new File(zipField.getText());
       if (!mmcInstancesFolder.isDirectory()) {
@@ -142,80 +187,40 @@ public class Gui {
             zipFile.getName().replaceAll("\\.zip$", "")).getAbsoluteFile();
 
         // Clear up gui and switch to progress bar
-        final JFrame oldFrame = new JFrame("TuxCraft Installer");
-        final JPanel panel = new JPanel();
-        frame.setLayout(new GridLayout(3, 1));
-        frame.setSize(700, 300);
-        frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        panel.add(topBar);
-        currentActionLabel.setVerticalAlignment(JLabel.CENTER);
-        currentActionLabel
-            .setText("Tuxcraft installation should begin soon... Please be patient..");
-        frame.add(currentActionLabel);
-        frame.add(panel);
-        frame.add(new JPanel());
-        frame.pack();
-        frame.setVisible(true);
-        oldFrame.dispose();
+        loadingFrame.pack();
+        loadingFrame.setVisible(true);
+        initFrame.dispose();
 
         // Unlock main thread
-        wait.set(false);
+        valuesInitiated.set(true);
       }
-    });
 
-    frame.add(mmcPanel);
-    frame.add(zipPanel);
-    frame.add(nextPanel);
-
-    frame.setVisible(true);
-
-    /*START OF DEV SHIT*/
-    mmcField.setText("C:\\Program Files\\MultiMC\\instances");
-    zipField.setText("C:\\User\\barasingha\\Downloads\\TuxCraft-X.X.XX.zip");
-    /*END OF DEV SHIT*/
-
-    while (wait.get()) {
-      Thread.yield(); // wait until values initialized before returning
     }
   }
 
-  static void onExtract() {
-    topBar.setValue(1);
-    currentActionLabel.setText("Extracting instance...");
-  }
+  /* Initiates all gui components, actually displays nothing */
+  static {
+    valuesInitiated = new AtomicBoolean(false);
 
-  static void onInstancesCheck() {
-    topBar.setValue(2);
-    currentActionLabel.setText("Checking for older TuxCraft instances...");
-  }
+    initFrame = makeFrame(JFrame.EXIT_ON_CLOSE);
+    loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE);
+    mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
+    zipField = new JTextField("C:\\User\\" + System.getProperty("user.name") + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
+    nextButton = new JButton(new NextButtonAction());
+    loadingBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 6);
+    currentActionLabel = new JLabel("Tuxcraft installation should begin soon... Please be patient..");
 
-  static void onCopyOld() {
-    topBar.setValue(3);
-    currentActionLabel.setText("Copying latest installed instance...");
-  }
+    nextButton.setText("Next");
+    currentActionLabel.setVerticalAlignment(JLabel.CENTER);
 
-  static void onSkipCopyOld() {
-    topBar.setValue(3);
-    currentActionLabel.setText("Skipping old instance copy");
-  }
+    initFrame.add(encapsulate(null));
+    initFrame.add(makePathEntry("MultiMC instances folder:", mmcField, JFileChooser.DIRECTORIES_ONLY, null));
+    initFrame.add(makePathEntry("TuxCraft instance archive:", zipField, JFileChooser.FILES_AND_DIRECTORIES, new FileNameExtensionFilter("ZIP archive", "zip")));
+    initFrame.add(encapsulate(null));
+    initFrame.add(encapsulate(new FlowLayout(FlowLayout.RIGHT), nextButton));
 
-  static void onUpdating() {
-    topBar.setValue(4);
-    currentActionLabel.setText("Updating...");
-  }
-
-  static void onCleanup() {
-    topBar.setValue(5);
-    currentActionLabel.setText("Cleaning up...");
-  }
-
-  static void onDone() {
-    topBar.setValue(topBar.getMaximum());
-    currentActionLabel.setText("Done.");
-  }
-
-  static void exit() {
-    frame.dispose();
+    loadingFrame.add(encapsulate(null));
+    loadingFrame.add(currentActionLabel);
+    loadingFrame.add(encapsulate(null, loadingBar));
   }
 }
