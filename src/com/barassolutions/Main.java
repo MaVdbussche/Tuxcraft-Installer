@@ -3,6 +3,7 @@ package com.barassolutions;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -23,15 +24,10 @@ import org.json.simple.parser.ParseException;
 public class Main {
 
   /**
-   * Main method.
-   * 1) Launching the GUI
-   * 2) Extract the zip archive in its folder
-   * 3) Check if Tuxcraft is already present in this MultiMC install (update vs fresh install)
-   * 4.1) In the case of a fresh install
-   * 4.2) In the case of an update :
-   * 5) Proceed to copy/move the extracted archive to the instances folder
-   * 6) Delete the temporary extracted archive
-   * 7) Close the GUI elements
+   * Main method. 1) Launching the GUI 2) Extract the zip archive in its folder 3) Check if Tuxcraft
+   * is already present in this MultiMC install (update vs fresh install) 4.1) In the case of a
+   * fresh install 4.2) In the case of an update : 5) Proceed to copy/move the extracted archive to
+   * the instances folder 6) Delete the temporary extracted archive 7) Close the GUI elements
    */
   public static void main(String[] args) {
     try {
@@ -39,29 +35,33 @@ public class Main {
       Gui.initValues();
 
       /*2) Extract the zip archive in its folder*/
-            Gui.onExtract();
+      Gui.onExtract();
       extract(Values.updateArchive, Values.updateArchive.getParentFile());
 
       /*3) Check if Tuxcraft is already present in this MultiMC install (update vs fresh install)*/
-            Gui.onInstancesCheck();
+      Gui.onInstancesCheck();
       List<File> existingTuxcraftInstances = new LinkedList<>();
 
-      List<File> existingInstances = Arrays
-          .asList(Objects.requireNonNull(Values.rootInstancesFolder.listFiles()));
-      existingInstances.forEach(dir -> {
-        if (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")) {
-          /*List the files in this tuxcraft directory*/
-          File[] content = dir.listFiles();
-          if (content != null) {
-            /*Look for a file called tuxcraft-update.json*/
-            if (Arrays.stream(content).anyMatch(file -> file.getName().toLowerCase().equals(Values.updateFileName))){
-              /*This is a TuxCraft instance*/
-              System.out.println("Found one existing TuxCraft instance, named " + dir.getName());
-              existingTuxcraftInstances.add(dir);
-            }
-          } // else we skip it
-        } // else we skip it
-      });
+      File[] instances = Values.rootInstancesFolder.listFiles();
+      if (instances != null) {
+        Arrays.stream(instances)
+            .filter(dir ->
+                (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")))
+            .forEach(dir -> {
+              /*List the files in this tuxcraft directory*/
+              File[] content = dir.listFiles();
+              if (content != null) {
+                /*Look for a file called tuxcraft-update.json*/
+                if (Arrays.stream(content)
+                    .anyMatch(file -> file.getName().toLowerCase().equals(Values.updateFileName))) {
+                  /*This is a TuxCraft instance*/
+                  System.out
+                      .println("Found one existing TuxCraft instance, named " + dir.getName());
+                  existingTuxcraftInstances.add(dir);
+                }
+              } // else we skip it
+            });
+      }
       existingTuxcraftInstances.sort(null);
 
       boolean freshInstall = (existingTuxcraftInstances.size() == 0);
@@ -77,7 +77,7 @@ public class Main {
         preservedFiles = new HashSet<>();
       } else {
         /*4.2) In the case of an update :*/
-                Gui.onCopyOld();
+        Gui.onCopyOld();
         System.out.println("Updating !");
         /*Make a copy of the instance folder*/
         Path oldInstance = existingTuxcraftInstances.get(existingTuxcraftInstances.size() - 1)
@@ -102,23 +102,25 @@ public class Main {
 
     } finally {
       /*6) Delete the temporary extracted archive*/
-      //TODO delete archive extracted at Values.unzippedArchive
+      Gui.onCleanup();
+      deleteRecursively(Values.unzippedArchive);
       /*7) Close the GUI elements*/
 
       Gui.onDone();
       try {
         Thread.sleep(2000);
-      } catch (InterruptedException ignored) {}
+      } catch (InterruptedException ignored) {
+      }
       Gui.exit();
     }
   }
 
   /**
-   * Copies recursively a folder, including all its sub-contents,
-   * and REPLACES files with conflicting names.
-   * Allows to skip (not copy) certain files by passing them in the 3rd argument
-   * @param sourceFolder the Path to the source folder
-   * @param destFolder the Path to the destination folder
+   * Copies recursively a folder, including all its sub-contents, and REPLACES files with
+   * conflicting names. Allows to skip (not copy) certain files by passing them in the 3rd argument
+   *
+   * @param sourceFolder   the Path to the source folder
+   * @param destFolder     the Path to the destination folder
    * @param preservedFiles a Set of Path to files that will not by copied to the destination
    */
   private static void copyRecursively(Path sourceFolder, Path destFolder,
@@ -132,7 +134,7 @@ public class Main {
 
     while (!frontier.empty()) {
       // pop it
-      File newFile = frontier.pop(); // this is an ABSOLUTE path
+      File newFile = frontier.pop();
       // handle it
       Path pathRelative = sourceFolder
           .relativize(newFile.toPath()); // Path relative to the root of instance folder
@@ -160,8 +162,27 @@ public class Main {
   }
 
   /**
+   * Deletes recursively a File, including all its sub-contents if it denotes a directory.
+   * Be careful !
+   *
+   * @param file   the Path to the folder to be deleted
+   */
+  private static void deleteRecursively(File file) {
+    File[] contents = file.listFiles();
+    if (contents != null) {
+      for (File f : contents) {
+        if (! Files.isSymbolicLink(f.toPath())) {
+          deleteRecursively(f);
+        }
+      }
+    }
+    file.delete();
+  }
+
+  /**
    * Extracting a zip archive to a given destination.
-   * @param archive the zip file to extract
+   *
+   * @param archive     the zip file to extract
    * @param destination the folder where we should extract it
    */
   private static void extract(File archive, File destination) {
@@ -175,6 +196,7 @@ public class Main {
 
   /**
    * Read the update whitelist file.
+   *
    * @param instanceFolder folder where the update json file is located
    * @return a Set of Path obtained from the whitelist file
    */
@@ -213,7 +235,7 @@ public class Main {
   }
 
 
-  public static class Values {
+  static class Values {
 
     static File rootInstancesFolder; // This is an ABSOLUTE path obtained from user
     static File updateArchive; // This is an ABSOLUTE path to the zip archive, obtained from user

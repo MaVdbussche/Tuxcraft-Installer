@@ -21,7 +21,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class Gui {
 
   private static JFrame frame = new JFrame("Tuxcraft Installer");
-  private static final JProgressBar topBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 5);
+  private static final JProgressBar topBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 6);
   private static final JLabel currentActionLabel = new JLabel();
 
   /**
@@ -142,9 +142,8 @@ public class Gui {
             zipFile.getName().replaceAll("\\.zip$", "")).getAbsoluteFile();
 
         // Clear up gui and switch to progress bar
-        JFrame oldFrame = frame;
-        frame = new JFrame("TuxCraft Installer");
-        JPanel panel = new JPanel();
+        final JFrame oldFrame = new JFrame("TuxCraft Installer");
+        final JPanel panel = new JPanel();
         frame.setLayout(new GridLayout(3, 1));
         frame.setSize(700, 300);
         frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
@@ -204,6 +203,11 @@ public class Gui {
   static void onUpdating() {
     topBar.setValue(4);
     currentActionLabel.setText("Updating...");
+  }
+
+  static void onCleanup() {
+    topBar.setValue(5);
+    currentActionLabel.setText("Cleaning up...");
   }
 
   static void onDone() {
