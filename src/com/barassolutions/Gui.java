@@ -193,7 +193,7 @@ public class Gui {
 
   static void onCopyOld() {
     topBar.setValue(3);
-    topBar.setString("Copying latest installed instance...");
+    currentActionLabel.setText("Copying latest installed instance...");
   }
 
   static void onSkipCopyOld() {
