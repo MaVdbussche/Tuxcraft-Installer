@@ -13,14 +13,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
-
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
 
 public class Main {
 
@@ -41,9 +39,11 @@ public class Main {
       Gui.initValues();
 
       /*2) Extract the zip archive in its folder*/
+            Gui.onExtract();
       extract(Values.updateArchive, Values.updateArchive.getParentFile());
 
       /*3) Check if Tuxcraft is already present in this MultiMC install (update vs fresh install)*/
+            Gui.onInstancesCheck();
       List<File> existingTuxcraftInstances = new LinkedList<>();
 
       List<File> existingInstances = Arrays
@@ -72,10 +72,12 @@ public class Main {
 
       if (freshInstall) {
         /*4.1) In the case of a fresh install :*/
+        Gui.onSkipCopyOld();
         System.out.println("Fresh install !");
         preservedFiles = new HashSet<>();
       } else {
         /*4.2) In the case of an update :*/
+                Gui.onCopyOld();
         System.out.println("Updating !");
         /*Make a copy of the instance folder*/
         Path oldInstance = existingTuxcraftInstances.get(existingTuxcraftInstances.size() - 1)
@@ -95,11 +97,18 @@ public class Main {
       }
 
       /*5) Proceed to copy/move the extracted archive to the instances folder*/
+      Gui.onUpdating();
       copyRecursively(Values.unzippedArchive.toPath(), newFolder, preservedFiles);
+
     } finally {
       /*6) Delete the temporary extracted archive*/
       //TODO delete archive extracted at Values.unzippedArchive
       /*7) Close the GUI elements*/
+
+      Gui.onDone();
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException ignored) {}
       Gui.exit();
     }
   }

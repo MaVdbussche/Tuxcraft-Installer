@@ -5,23 +5,24 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Gui {
 
-  private static final JFrame frame = new JFrame("Tuxcraft Installer");
+  private static JFrame frame = new JFrame("Tuxcraft Installer");
+  private static final JProgressBar topBar = new JProgressBar(JProgressBar.HORIZONTAL, 0, 5);
+  private static final JLabel currentActionLabel = new JLabel();
 
   /**
    * An action listener (for clicks) for browse buttons.
@@ -111,12 +112,14 @@ public class Gui {
       final File zipFile = new File(zipField.getText());
       if (!mmcInstancesFolder.isDirectory()) {
         JOptionPane
-            .showMessageDialog(null, "\"" + mmcField.getText() + "\" is not a directory",
+            .showMessageDialog(null,
+                "\"" + mmcField.getText() + "\" is not a directory",
                 "Oh no !",
                 JOptionPane.WARNING_MESSAGE);
       } else if (!zipFile.isFile()) {
         JOptionPane
-            .showMessageDialog(null, "\"" + zipField.getText() + "\" does not exist", "Oh no !",
+            .showMessageDialog(null,
+                "\"" + zipField.getText() + "\" does not exist", "Oh no !",
                 JOptionPane.WARNING_MESSAGE);
       } else if (!Pattern
           .matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9].*\\.zip", zipField.getText())) {
@@ -138,12 +141,25 @@ public class Gui {
         Main.Values.unzippedArchive = new File(Main.Values.updateArchive.getParent(),
             zipFile.getName().replaceAll("\\.zip$", "")).getAbsoluteFile();
 
-        // Deactivate all event handling
-        mmcField.setEditable(false);
-        zipField.setEditable(false);
-        mmcBrowse.removeActionListener(mmcBrowse.getActionListeners()[0]);
-        zipBrowse.removeActionListener(zipBrowse.getActionListeners()[0]);
-        nextButton.removeActionListener(nextButton.getActionListeners()[0]);
+        // Clear up gui and switch to progress bar
+        JFrame oldFrame = frame;
+        frame = new JFrame("TuxCraft Installer");
+        JPanel panel = new JPanel();
+        frame.setLayout(new GridLayout(3, 1));
+        frame.setSize(700, 300);
+        frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        panel.add(topBar);
+        currentActionLabel.setVerticalAlignment(JLabel.CENTER);
+        currentActionLabel
+            .setText("Tuxcraft installation should begin soon... Please be patient..");
+        frame.add(currentActionLabel);
+        frame.add(panel);
+        frame.add(new JPanel());
+        frame.pack();
+        frame.setVisible(true);
+        oldFrame.dispose();
+
         // Unlock main thread
         wait.set(false);
       }
@@ -165,7 +181,37 @@ public class Gui {
     }
   }
 
+  static void onExtract() {
+    topBar.setValue(1);
+    currentActionLabel.setText("Extracting instance...");
+  }
+
+  static void onInstancesCheck() {
+    topBar.setValue(2);
+    currentActionLabel.setText("Checking for older TuxCraft instances...");
+  }
+
+  static void onCopyOld() {
+    topBar.setValue(3);
+    topBar.setString("Copying latest installed instance...");
+  }
+
+  static void onSkipCopyOld() {
+    topBar.setValue(3);
+    currentActionLabel.setText("Skipping old instance copy");
+  }
+
+  static void onUpdating() {
+    topBar.setValue(4);
+    currentActionLabel.setText("Updating...");
+  }
+
+  static void onDone() {
+    topBar.setValue(topBar.getMaximum());
+    currentActionLabel.setText("Done.");
+  }
+
   static void exit() {
-    frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+    frame.dispose();
   }
 }
