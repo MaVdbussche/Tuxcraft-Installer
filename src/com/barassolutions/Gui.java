@@ -34,6 +34,54 @@ class Gui {
   private static final JLabel currentActionLabel;
 
   /**
+   * Logs an error message, then displays it in a popup and returns when it is closed.
+   *
+   * @param msg The error message
+   */
+  static void popError(String msg) {
+    System.err.printf("[#] %s\n", msg.replace("\n", "\n\t"));
+    JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.ERROR_MESSAGE);
+  }
+
+  /**
+   * Logs the exception, then displays it in a popup and exit program when it is closed.
+   * Cleanup code in Main.main() is executed.
+   * It is displayed in the same style as a Java stacktrace.
+   *
+   * @param e The exception
+   */
+  static void popError(Exception e) {
+    StringBuilder msg = new StringBuilder("An unexpected error occurred,\n")
+        .append("Please send this report to developers if it happens reliably:\n")
+        .append(e.getMessage())
+        .append("\n\n-----\nStacktrace (least recent up) :");
+
+    StackTraceElement[] trace = e.getStackTrace();
+
+    for (int i = Math.min(trace.length, 14); i >= 0; i--) {
+      msg.append(trace[i].toString()).append("\n");
+    }
+
+    if (trace.length > 15) {
+      msg.append("\nand ").append(trace.length - 15).append(" more...");
+    }
+
+    popError(msg.toString());
+    System.err.println("[#] Critical error, aborting !");
+    throw new RuntimeException(); // Abort, executing cleanup code of Main
+  }
+
+  /**
+   * Logs a warning message and displays it in a popup and returns when it is closed.
+   *
+   * @param msg The warning message
+   */
+  static void popWarning(String msg) {
+    System.err.printf("[!] %s\n", msg.replace("\n", "\n\t"));
+    JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.WARNING_MESSAGE);
+  }
+
+  /**
    * Initiates and displays the installer's GUI.
    */
   static void initValues() {
@@ -150,9 +198,7 @@ class Gui {
       if (ret == JFileChooser.APPROVE_OPTION) {
         field.setText(chooser.getSelectedFile().getAbsolutePath());
       } else if (ret == JFileChooser.ERROR_OPTION) {
-        JOptionPane
-            .showMessageDialog(null, "Error, contact the developers or install manually :/",
-                "Not UwU", JOptionPane.ERROR_MESSAGE);
+        popError("Unexpected and unreported error, contact the developers or install manually :/");
       }
     }
   }
@@ -164,30 +210,21 @@ class Gui {
       final File mmcInstancesFolder = new File(mmcField.getText());
       final File zipFile = new File(zipField.getText());
       if (!mmcInstancesFolder.isDirectory()) {
-        JOptionPane
-            .showMessageDialog(null,
-                "\"" + mmcField.getText() + "\" is not a directory",
-                "Oh no !",
-                JOptionPane.WARNING_MESSAGE);
+        popWarning("\"" + mmcField.getText() + "\" is not a directory");
       } else if (!zipFile.isFile()) {
-        JOptionPane
-            .showMessageDialog(null,
-                "\"" + zipField.getText() + "\" does not exist", "Oh no !",
-                JOptionPane.WARNING_MESSAGE);
+        popWarning("\"" + zipField.getText() + "\" does not exist");
       } else if (!Pattern
           .matches(".*[\\\\/]TuxCraft-[0-9]\\.[0-9]\\.[0-9][0-9].*\\.zip", zipField.getText())) {
-        JOptionPane.showMessageDialog(null,
-            "The file you specified either is not a TuxCraft instance, or it is badly named.\n"
-                + "If this is the case, please rename in as `TuxCraft-x.x.xx.zip, replacing `x` "
-                + "appropriately by the version numbers.", "Oh no !",
-            JOptionPane.WARNING_MESSAGE);
+        popWarning(
+            "The specified file either is not a TuxCraft instance, or it is badly named.\n"
+            + "If this is the case, please rename in as `TuxCraft-x.x.xx.zip, "
+            + "replacing `x` appropriately by the version numbers.");
       } else if (mmcInstancesFolder.getAbsolutePath()
           .equals(zipFile.getParentFile().getAbsolutePath())) {
-        JOptionPane.showMessageDialog(null,
+        popWarning(
             "It is not allowed to place the zip file in the MultiMC instances folder, as this will"
                 + " cause conflicts during the extraction.\n Please place it somewhere else, "
-                + "then press the \"" + nextButton.getText() + "\" button again.", "Oh no !",
-            JOptionPane.WARNING_MESSAGE);
+                + "then press the \"" + nextButton.getText() + "\" button again.");
       } else {
         Main.Values.rootInstancesFolder = mmcInstancesFolder.getAbsoluteFile();
         Main.Values.updateArchive = zipFile.getAbsoluteFile();

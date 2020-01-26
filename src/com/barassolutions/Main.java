@@ -20,6 +20,9 @@ import org.json.simple.parser.ParseException;
 
 public class Main {
 
+  // TODO: use log conventions in logging
+  // TODO: make a reminder for which is what or an easy way to use them (see previous todo)
+
   /**
    * Main method. 1) Launching the GUI 2) Extract the zip archive in its folder 3) Check if Tuxcraft
    * is already present in this MultiMC install (update vs fresh install) 4.1) In the case of a
