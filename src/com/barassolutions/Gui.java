@@ -209,7 +209,7 @@ class Gui {
    *                    passed to JFrame.setDefaultCloseAction()
    * @return A new JFrame properly setup
    */
-  private static JFrame makeFrame(int closeAction) {
+  private static JFrame makeSimpleFrame(int closeAction) {
     final JFrame frame = new JFrame("TuxCraft Installer");
     frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
     frame.setDefaultCloseOperation(closeAction);
@@ -223,13 +223,11 @@ class Gui {
    *
    * @param closeAction The default close action of the frame,
    *                    passed to JFrame.setDefaultCloseAction()
-   * @param width       The width of the frame
-   * @param height      The height of the frame
    * @return A new JFrame properly setup
    */
-  private static JFrame makeFrame(int closeAction, int width, int height) {
-    final JFrame frame = makeFrame(closeAction);
-    frame.setSize(new Dimension(width, height));
+  private static JFrame makeFrame(int closeAction) {
+    final JFrame frame = makeSimpleFrame(closeAction);
+    frame.setSize(new Dimension(700, 300));
     frame.setLayout(new GridLayout(5, 1));
     return frame;
   }
@@ -367,9 +365,9 @@ class Gui {
   static {
     valuesInitiated = new AtomicBoolean(false);
 
-    initFrame = makeFrame(JFrame.EXIT_ON_CLOSE, 700, 300);
-    loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE, 700, 300);
-    logFrame = makeFrame(JFrame.HIDE_ON_CLOSE);
+    initFrame = makeFrame(JFrame.EXIT_ON_CLOSE);
+    loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE);
+    logFrame = makeSimpleFrame(JFrame.HIDE_ON_CLOSE);
     logArea = new JTextArea(50, 80);
     mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
     zipField = new JTextField("C:\\User\\" + System.getProperty("user.name")
