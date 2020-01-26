@@ -107,6 +107,7 @@ class Gui {
 
     popError(msg.toString());
     logError("Critical error, aborting !");
+    dumpLogs();
     throw new RuntimeException(); // Abort, executing cleanup code of Main
   }
 
