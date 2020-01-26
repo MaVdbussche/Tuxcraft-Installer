@@ -10,12 +10,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -189,24 +186,13 @@ public class Main {
    */
   private static Set<Path> loadWhitelist(File instanceFolder) {
     Set<Path> out = new HashSet<>();
-    List<String> fileNames = new LinkedList<>();
-    for (File file : Objects.requireNonNull(instanceFolder.listFiles())) {
-      fileNames.add(file.getName());
-    }
-
-    if (!fileNames.contains(Values.updateFileName)) {
-      System.err.println("*********************************************");
-      System.err.println("*********************************************");
-      System.err.println("[CRITICAL] Could not find tuxcraft-update.json !!!!!");
-      System.err.println("*********************************************");
-      System.err.println("*********************************************");
-      System.err.println("We will proceed and replace all the files in the instance !");
-    }
     JSONParser jsonParser = new JSONParser();
     try (FileReader fr = new FileReader(new File(instanceFolder, Values.updateFileName))) {
       Object obj = jsonParser.parse(fr);
       out = parseObject((JSONObject) obj);
     } catch (IOException | ParseException e) {
+      // TODO: if `tuxcraft-update.json` is missing in the update archive,
+      //  an IOException WILL be raised
       e.printStackTrace();
     }
     System.out.println("Loaded whitelist, size=" + out.size());
