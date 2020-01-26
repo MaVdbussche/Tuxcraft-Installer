@@ -20,6 +20,7 @@ import java.util.Set;
 
 class Mover {
 
+  // TODO: Are warnings really warnings ? Log them ? Gui.pop them ?
 
   private static boolean isWhitelisted(Path elem, Set<Path> set) {
     return set.contains(elem);
@@ -60,7 +61,7 @@ class Mover {
         } catch (FileAlreadyExistsException ignored) {
           //ignored
         } catch (IOException e) {
-          System.err.format("Unable to create: %s: %s%n\n", newDir, e);
+          System.err.format("[!] Unable to create: %s: %s%n\n", newDir, e);
           return SKIP_SUBTREE;
         }
         return CONTINUE;
@@ -77,7 +78,7 @@ class Mover {
         try {
           Files.copy(file, target, options);
         } catch (IOException e) {
-          System.err.format("Unable to copy: %s: %s%n\n", file, e);
+          System.err.format("[!] Unable to copy: %s: %s%n\n", file, e);
         }
       }
       return CONTINUE;
@@ -92,7 +93,7 @@ class Mover {
           FileTime time = Files.getLastModifiedTime(dir);
           Files.setLastModifiedTime(newDir, time);
         } catch (IOException e) {
-          System.err.format("Unable to copy all attributes to: %s: %s%n\n", newDir, e);
+          System.err.format("[!] Unable to copy all attributes to: %s: %s%n\n", newDir, e);
         }
       }
       return CONTINUE;
@@ -101,9 +102,9 @@ class Mover {
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) {
       if (exc instanceof FileSystemLoopException) {
-        System.err.println("cycle detected: " + file);
+        System.err.println("[!] cycle detected: " + file);
       } else {
-        System.err.format("Unable to copy: %s: %s%n\n", file, exc);
+        System.err.format("[!] Unable to copy: %s: %s%n\n", file, exc);
       }
       return CONTINUE;
     }

@@ -46,18 +46,18 @@ public class Main {
       File newFolder = new File(Values.rootInstancesFolder, Values.unzippedArchive.getName());
       //noinspection ResultOfMethodCallIgnored
       newFolder.mkdir();
-      System.out.println("New Folder will be placed at " + newFolder.getAbsolutePath());
+      System.out.println("[=] New Folder will be placed at " + newFolder.getAbsolutePath());
       Set<Path> preservedFiles;
 
       if (freshInstall) {
         /*4.1) In the case of a fresh install :*/
         Gui.onSkipCopyOld();
-        System.out.println("Fresh install !");
+        System.out.println("[=] Fresh install !");
         preservedFiles = new HashSet<>();
       } else {
         /*4.2) In the case of an update :*/
         Gui.onCopyOld();
-        System.out.println("Updating !");
+        System.out.println("[=] Updating !");
         /*Make a copy of the instance folder*/
         copyFoldersContents(existingTuxcraftInstance, newFolder, new HashSet<>());
         preservedFiles = loadWhitelist(Values.unzippedArchive);
@@ -139,11 +139,12 @@ public class Main {
           Files.walkFileTree(sourcePath, new Mover.CopyFileVisitor(
               sourcePath, targetPath, preserved));
         } catch (IOException e) {
-          System.err.println("An error occurred while copying " + sourcePath + " !");
+          System.err.println("[!] An error occurred while copying " + sourcePath + " !");
         }
       }
     } else {
-      System.err.println("[CRITICAL] passed arguments are not directories !");
+      // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
+      Gui.popError(new IllegalArgumentException("passed arguments are not directories !"));
     }
   }
 
@@ -177,7 +178,7 @@ public class Main {
       ZipFile zipFile = new ZipFile(archive);
       zipFile.extractAll(destination.toString());
     } catch (ZipException e) {
-      e.printStackTrace();
+      Gui.popError(e);
     }
   }
 
@@ -196,9 +197,10 @@ public class Main {
     } catch (IOException | ParseException e) {
       // TODO: if `tuxcraft-update.json` is missing in the update archive,
       //  an IOException WILL be raised
-      e.printStackTrace();
+      // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
+      Gui.popError(e);
     }
-    System.out.println("Loaded whitelist, size=" + out.size());
+    System.out.println("[=] Loaded whitelist, size=" + out.size());
     return out;
   }
 
