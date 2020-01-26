@@ -34,7 +34,7 @@ class Mover {
   static class CopyFileVisitor extends SimpleFileVisitor<Path> {
 
     private final Path targetPath;
-    private Path sourcePath;
+    private final Path sourcePath;
     private final Set<Path> preserved;
     private final boolean preserve;
 

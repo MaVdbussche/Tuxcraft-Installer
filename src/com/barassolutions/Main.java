@@ -61,7 +61,7 @@ public class Main {
         Gui.logInfo("Updating !");
         /*Make a copy of the instance folder*/
         copyFoldersContents(existingTuxcraftInstance, newFolder, new HashSet<>());
-        preservedFiles = loadWhitelist(Values.unzippedArchive);
+        preservedFiles = loadWhitelist(Values.unzippedArchive, newFolder);
       }
 
       /*5) Proceed to copy/move the extracted archive to the instances folder*/
@@ -143,8 +143,9 @@ public class Main {
         }
       }
     } else {
-      // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
       Gui.popError(new IllegalArgumentException("passed arguments are not directories !"));
+      deleteRecursively(destInstanceFolder);
+      deleteRecursively(Values.unzippedArchive);
     }
   }
 
@@ -188,7 +189,7 @@ public class Main {
    * @param instanceFolder folder where the update json file is located
    * @return a Set of Path obtained from the whitelist file
    */
-  private static Set<Path> loadWhitelist(File instanceFolder) {
+  private static Set<Path> loadWhitelist(File instanceFolder, File newInstanceFolder) {
     Set<Path> out = new HashSet<>();
     JSONParser jsonParser = new JSONParser();
     try (FileReader fr = new FileReader(new File(instanceFolder, Values.updateFileName))) {
@@ -198,10 +199,13 @@ public class Main {
           + ", size = " + out.size());
     } catch (FileNotFoundException e) {
       Gui.popError("File " + Values.updateFileName + " could not be opened."
-          + "Please make sure your archive is correct.");
+          + "Please make sure your zip archive is correct.");
+      deleteRecursively(instanceFolder);
+      deleteRecursively(newInstanceFolder);
     } catch (IOException | ParseException e) {
-      // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
       Gui.popError(e);
+      deleteRecursively(instanceFolder);
+      deleteRecursively(newInstanceFolder);
     }
     return out;
   }
