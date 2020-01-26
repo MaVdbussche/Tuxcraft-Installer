@@ -1,6 +1,7 @@
 package com.barassolutions;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -193,13 +194,15 @@ public class Main {
     try (FileReader fr = new FileReader(new File(instanceFolder, Values.updateFileName))) {
       Object obj = jsonParser.parse(fr);
       out = parseObject((JSONObject) obj);
+      Gui.logInfo("Successfully loaded whitelist from " + Values.updateFileName
+          + ", size = " + out.size());
+    } catch (FileNotFoundException e) {
+      Gui.popError("File " + Values.updateFileName + " could not be opened."
+          + "Please make sure your archive is correct.");
     } catch (IOException | ParseException e) {
-      // TODO: if `tuxcraft-update.json` is missing in the update archive,
-      //  an IOException WILL be raised
       // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
       Gui.popError(e);
     }
-    Gui.logInfo("Loaded whitelist, size=" + out.size());
     return out;
   }
 
