@@ -46,18 +46,18 @@ public class Main {
       File newFolder = new File(Values.rootInstancesFolder, Values.unzippedArchive.getName());
       //noinspection ResultOfMethodCallIgnored
       newFolder.mkdir();
-      System.out.println("[=] New Folder will be placed at " + newFolder.getAbsolutePath());
+      Gui.logInfo("New Folder will be placed at " + newFolder.getAbsolutePath());
       Set<Path> preservedFiles;
 
       if (freshInstall) {
         /*4.1) In the case of a fresh install :*/
         Gui.onSkipCopyOld();
-        System.out.println("[=] Fresh install !");
+        Gui.logInfo("Fresh install !");
         preservedFiles = new HashSet<>();
       } else {
         /*4.2) In the case of an update :*/
         Gui.onCopyOld();
-        System.out.println("[=] Updating !");
+        Gui.logInfo("Updating !");
         /*Make a copy of the instance folder*/
         copyFoldersContents(existingTuxcraftInstance, newFolder, new HashSet<>());
         preservedFiles = loadWhitelist(Values.unzippedArchive);
@@ -105,8 +105,7 @@ public class Main {
               if (Arrays.stream(content)
                   .anyMatch(file -> file.getName().toLowerCase().equals(Values.updateFileName))) {
                 /*This is a TuxCraft instance*/
-                System.out
-                    .println("Found one existing TuxCraft instance, named " + dir.getName());
+                Gui.logInfo("Found one existing TuxCraft instance, named " + dir.getName());
                 tuxcraftInstances.add(dir);
               }
             } // else we skip it
@@ -139,7 +138,7 @@ public class Main {
           Files.walkFileTree(sourcePath, new Mover.CopyFileVisitor(
               sourcePath, targetPath, preserved));
         } catch (IOException e) {
-          System.err.println("[!] An error occurred while copying " + sourcePath + " !");
+          Gui.logWarning("An error occurred while copying " + sourcePath + " !");
         }
       }
     } else {
@@ -200,7 +199,7 @@ public class Main {
       // TODO: Clean-up copied old instance if necessary (avoid duplicated instance)
       Gui.popError(e);
     }
-    System.out.println("[=] Loaded whitelist, size=" + out.size());
+    Gui.logInfo("Loaded whitelist, size=" + out.size());
     return out;
   }
 

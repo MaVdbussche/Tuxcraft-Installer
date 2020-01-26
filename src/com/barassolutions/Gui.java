@@ -1,23 +1,36 @@
 package com.barassolutions;
 
+import com.barassolutions.Main.Values;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import javax.swing.AbstractAction;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -27,11 +40,37 @@ class Gui {
 
   private static final JFrame initFrame;
   private static final JFrame loadingFrame;
+  private static final JFrame logFrame;
+  private static final JTextArea logArea;
   private static final JTextField mmcField;
   private static final JTextField zipField;
   private static final JButton nextButton;
   private static final JProgressBar loadingBar;
   private static final JLabel currentActionLabel;
+
+  static void logDebug(String msg) {
+    msg = "[*] " + msg.replace("\n", "\n\t");
+    System.out.println(msg);
+    logArea.append(msg + "\n");
+  }
+
+  static void logInfo(String msg) {
+    msg = "[=] " + msg.replace("\n", "\n\t");
+    System.out.println(msg);
+    logArea.append(msg + "\n");
+  }
+
+  static void logWarning(String msg) {
+    msg = "[!] " + msg.replace("\n", "\n\t");
+    System.out.println(msg);
+    logArea.append(msg + "\n");
+  }
+
+  static void logError(String msg) {
+    msg = "[#] " + msg.replace("\n", "\n\t");
+    System.out.println(msg);
+    logArea.append(msg + "\n");
+  }
 
   /**
    * Logs an error message, then displays it in a popup and returns when it is closed.
@@ -39,7 +78,7 @@ class Gui {
    * @param msg The error message
    */
   static void popError(String msg) {
-    System.err.printf("[#] %s\n", msg.replace("\n", "\n\t"));
+    logError(msg);
     JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.ERROR_MESSAGE);
   }
 
@@ -67,7 +106,7 @@ class Gui {
     }
 
     popError(msg.toString());
-    System.err.println("[#] Critical error, aborting !");
+    logError("Critical error, aborting !");
     throw new RuntimeException(); // Abort, executing cleanup code of Main
   }
 
@@ -77,8 +116,27 @@ class Gui {
    * @param msg The warning message
    */
   static void popWarning(String msg) {
-    System.err.printf("[!] %s\n", msg.replace("\n", "\n\t"));
+    logWarning(msg);
     JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.WARNING_MESSAGE);
+  }
+
+  /**
+   * Dumps all the content of logArea (i.e. all logs) into a log file.
+   * Log file names include the local date time
+   * Logs dumps are visible in dumped logs.
+   */
+  static void dumpLogs() {
+    File logFile = new File(Values.rootInstancesFolder,
+        LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            + "_TuxCraft-Installer.log");
+    logInfo(String.format("Dumping %d lines of log in %s ...",
+        logArea.getLineCount(), logFile.getAbsolutePath()));
+    try {
+      BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
+      writer.write(logArea.getText());
+    } catch (IOException e) {
+      popError("Unable to write log file !");
+    }
   }
 
   /**
@@ -131,6 +189,7 @@ class Gui {
   static void exit() {
     initFrame.dispose();
     loadingFrame.dispose();
+    logFrame.dispose();
   }
 
   private static JPanel encapsulate(LayoutManager layoutManager, JComponent... components) {
@@ -142,7 +201,7 @@ class Gui {
   }
 
   /**
-   * Creates a frame named TuxCraft Installer with given default close action.
+   * Creates a frame named TuxCraft Installer with given default close action and no fixed size.
    *
    * @param closeAction The default close action of the frame,
    *                    passed to JFrame.setDefaultCloseAction()
@@ -150,9 +209,25 @@ class Gui {
    */
   private static JFrame makeFrame(int closeAction) {
     final JFrame frame = new JFrame("TuxCraft Installer");
-    frame.setSize(new Dimension(700, 300));
     frame.setFont(new Font("SansSerif", Font.PLAIN, 14));
     frame.setDefaultCloseOperation(closeAction);
+    frame.setResizable(true);
+    frame.setLayout(new GridLayout(1, 1));
+    return frame;
+  }
+
+  /**
+   * Creates a frame named TuxCraft Installer with given default close action and dimensions.
+   *
+   * @param closeAction The default close action of the frame,
+   *                    passed to JFrame.setDefaultCloseAction()
+   * @param width       The width of the frame
+   * @param height      The height of the frame
+   * @return A new JFrame properly setup
+   */
+  private static JFrame makeFrame(int closeAction, int width, int height) {
+    final JFrame frame = makeFrame(closeAction);
+    frame.setSize(new Dimension(width, height));
     frame.setLayout(new GridLayout(5, 1));
     return frame;
   }
@@ -172,6 +247,45 @@ class Gui {
     final JButton browseButton = new JButton(new BrowseButtonAction(field, filter, mode));
     browseButton.setText("Browse");
     return encapsulate(new FlowLayout(FlowLayout.LEFT), new JLabel(title), field, browseButton);
+  }
+
+  private static Box makeLogBox() {
+    Box box = new Box(BoxLayout.Y_AXIS);
+    box.add(new JScrollPane(logArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+    return box;
+  }
+
+  /**
+   * Creates a menu bar with a "Logs" button to display logs.
+   *
+   * @return a new JMenuBar properly setup
+   */
+  private static JMenuBar makeMenu() {
+    JMenu menu = new JMenu();
+    menu.setText("Logs");
+    JMenuItem button = new JMenuItem(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent actionEvent) {
+        logDebug("Log button callback called");
+        logFrame.pack();
+        logFrame.setVisible(true);
+      }
+    });
+    button.setText("Display logs");
+    menu.add(button);
+    button = new JMenuItem(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent actionEvent) {
+        logDebug("Dump log button callback called");
+        dumpLogs();
+      }
+    });
+    button.setText("Dump logs");
+    menu.add(button);
+    JMenuBar menuBar = new JMenuBar();
+    menuBar.add(menu);
+    return menuBar;
   }
 
   /**
@@ -248,8 +362,10 @@ class Gui {
   static {
     valuesInitiated = new AtomicBoolean(false);
 
-    initFrame = makeFrame(JFrame.EXIT_ON_CLOSE);
-    loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE);
+    initFrame = makeFrame(JFrame.EXIT_ON_CLOSE, 700, 300);
+    loadingFrame = makeFrame(JFrame.DO_NOTHING_ON_CLOSE, 700, 300);
+    logFrame = makeFrame(JFrame.HIDE_ON_CLOSE);
+    logArea = new JTextArea(50, 80);
     mmcField = new JTextField("C:\\Program Files\\MultiMC\\instances", 30);
     zipField = new JTextField("C:\\User\\" + System.getProperty("user.name")
      + "\\Downloads\\TuxCraft-X.X.XX.zip", 30);
@@ -260,6 +376,7 @@ class Gui {
 
     nextButton.setText("Next");
     currentActionLabel.setVerticalAlignment(JLabel.CENTER);
+    logArea.setEditable(false);
 
     initFrame.add(encapsulate(null));
     initFrame.add(makePathEntry("MultiMC instances folder:", mmcField,
@@ -272,6 +389,12 @@ class Gui {
     loadingFrame.add(encapsulate(null));
     loadingFrame.add(currentActionLabel);
     loadingFrame.add(encapsulate(null, loadingBar));
+
+    logFrame.add(makeLogBox());
+
+    initFrame.setJMenuBar(makeMenu());
+    loadingFrame.setJMenuBar(makeMenu());
+    logFrame.setJMenuBar(makeMenu());
 
     //TODO EDIT at production ! custom pre-filled path entries
     mmcField.setText("/home/barasingha/.local/share/multimc/instances");
