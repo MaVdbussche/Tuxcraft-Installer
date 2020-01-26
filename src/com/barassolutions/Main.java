@@ -21,9 +21,6 @@ import org.json.simple.parser.ParseException;
 
 public class Main {
 
-  // TODO: use log conventions in logging
-  // TODO: make a reminder for which is what or an easy way to use them (see previous todo)
-
   /**
    * Main method. 1) Launching the GUI 2) Extract the zip archive in its folder 3) Check if Tuxcraft
    * is already present in this MultiMC install (update vs fresh install) 4.1) In the case of a
@@ -34,6 +31,13 @@ public class Main {
     try {
       /*1) Launching the GUI*/
       Gui.initValues();
+      Gui.logDebug(String.format("copying attributes: %s",
+          Values.copyAttributes ? "enabled" : "disabled"));
+      Gui.logDebug(String.format("update file is %s", Values.updateFileName));
+      Gui.logDebug(String.format("root instance folder is %s",
+          Values.rootInstancesFolder.getAbsolutePath()));
+      Gui.logDebug(String.format("update archive is %s", Values.updateArchive));
+      Gui.logDebug(String.format("unzipped archive will be %s", Values.unzippedArchive));
 
       /*2) Extract the zip archive in its folder*/
       Gui.onExtract();
@@ -45,8 +49,11 @@ public class Main {
 
       boolean freshInstall = (existingTuxcraftInstance == null);
       File newFolder = new File(Values.rootInstancesFolder, Values.unzippedArchive.getName());
-      //noinspection ResultOfMethodCallIgnored
-      newFolder.mkdir();
+      if (newFolder.mkdir()) {
+        Gui.logDebug("new instance folder created");
+      } else {
+        Gui.logDebug("new instance folder already existed");
+      }
       Gui.logInfo("New Folder will be placed at " + newFolder.getAbsolutePath());
       Set<Path> preservedFiles;
 
@@ -58,7 +65,8 @@ public class Main {
       } else {
         /*4.2) In the case of an update :*/
         Gui.onCopyOld();
-        Gui.logInfo("Updating !");
+        Gui.logInfo(String.format("Updating from %s", existingTuxcraftInstance.getName()));
+        Gui.logInfo("Copying older instance before updating");
         /*Make a copy of the instance folder*/
         copyFoldersContents(existingTuxcraftInstance, newFolder, new HashSet<>());
         preservedFiles = loadWhitelist(Values.unzippedArchive, newFolder);
@@ -66,20 +74,22 @@ public class Main {
 
       /*5) Proceed to copy/move the extracted archive to the instances folder*/
       Gui.onUpdating();
+      Gui.logInfo("Updating");
       copyFoldersContents(Values.unzippedArchive, newFolder, preservedFiles);
 
     } finally {
       /*6) Delete the temporary extracted archive*/
       Gui.onCleanup();
+      Gui.logInfo("Cleaning up extracted archive");
       deleteRecursively(Values.unzippedArchive);
       /*7) Close the GUI elements*/
-
       Gui.onDone();
       try {
         Thread.sleep(2000);
       } catch (InterruptedException ignored) {
         //ignored
       }
+      Gui.logInfo("Exiting installer");
       Gui.exit();
     }
   }
@@ -99,6 +109,7 @@ public class Main {
           .filter(dir ->
               (dir.isDirectory() && dir.getName().toLowerCase().contains("tuxcraft")))
           .forEach(dir -> {
+            Gui.logDebug(String.format("potential tuxcraft instance: %s", dir.getAbsolutePath()));
             /*List the files in this tuxcraft directory*/
             File[] content = dir.listFiles();
             if (content != null) {
@@ -198,6 +209,8 @@ public class Main {
       Gui.logInfo("Successfully loaded whitelist from " + Values.updateFileName
           + ", size = " + out.size());
     } catch (FileNotFoundException e) {
+      // TODO: not aborting here causes an ugly abort when no `tuxcraft-update.json` is found
+      //  since we will try to copy a deleted directory into a deleted directory
       Gui.popError("File " + Values.updateFileName + " could not be opened."
           + "Please make sure your zip archive is correct.");
       deleteRecursively(instanceFolder);

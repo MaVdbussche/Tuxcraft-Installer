@@ -51,6 +51,7 @@ class Mover {
        * If not, we create it (if it does not already exist).*/
       if (isWhitelisted(sourcePath.relativize(dir), preserved)) {
         /*We need to skip this one !*/
+        Gui.logDebug(String.format("ignored %s", dir.toAbsolutePath().toString()));
         return SKIP_SUBTREE;
       } else {
         CopyOption[] options = (preserve)

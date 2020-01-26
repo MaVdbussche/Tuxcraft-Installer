@@ -66,7 +66,7 @@ class Gui {
     logArea.append(msg + "\n");
   }
 
-  static void logError(String msg) {
+  private static void logError(String msg) {
     msg = "[#] " + msg.replace("\n", "\n\t");
     System.out.println(msg);
     logArea.append(msg + "\n");
@@ -90,14 +90,14 @@ class Gui {
    * @param e The exception
    */
   static void popError(Exception e) {
-    StringBuilder msg = new StringBuilder("An unexpected error occurred,\n")
+    StringBuilder msg = new StringBuilder("An unexpected error occurred !\n")
         .append("Please send this report to developers if it happens reliably:\n")
         .append(e.getMessage())
         .append("\n\n-----\nStacktrace (least recent up) :");
 
     StackTraceElement[] trace = e.getStackTrace();
 
-    for (int i = Math.min(trace.length, 14); i >= 0; i--) {
+    for (int i = Math.min(trace.length - 1, 14); i >= 0; i--) {
       msg.append(trace[i].toString()).append("\n");
     }
 
@@ -116,7 +116,7 @@ class Gui {
    *
    * @param msg The warning message
    */
-  static void popWarning(String msg) {
+  private static void popWarning(String msg) {
     logWarning(msg);
     JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.WARNING_MESSAGE);
   }
@@ -126,7 +126,7 @@ class Gui {
    * Log file names include the local date time
    * Logs dumps are visible in dumped logs.
    */
-  static void dumpLogs() {
+  private static void dumpLogs() {
     File logFile = new File(Values.rootInstancesFolder,
         LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             + "_TuxCraft-Installer.log");
@@ -146,7 +146,7 @@ class Gui {
   static void initValues() {
     initFrame.pack();
     initFrame.setVisible(true);
-
+    logDebug("GUI: init frame displayed");
     while (!valuesInitiated.get()) {
       Thread.yield(); // wait until values initialized before returning
     }
@@ -188,6 +188,7 @@ class Gui {
   }
 
   static void exit() {
+    logDebug("GUI: exit called");
     initFrame.dispose();
     loadingFrame.dispose();
     logFrame.dispose();
@@ -268,9 +269,9 @@ class Gui {
     JMenuItem button = new JMenuItem(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent actionEvent) {
-        logDebug("Log button callback called");
         logFrame.pack();
         logFrame.setVisible(true);
+        logDebug("GUI: log button callback called, log frame displayed");
       }
     });
     button.setText("Display logs");
@@ -278,7 +279,7 @@ class Gui {
     button = new JMenuItem(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent actionEvent) {
-        logDebug("Dump log button callback called");
+        logDebug("GUI: dump log button callback called");
         dumpLogs();
       }
     });
@@ -309,6 +310,7 @@ class Gui {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+      logDebug("GUI: browse button callback called");
       int ret = chooser.showOpenDialog(null);
       if (ret == JFileChooser.APPROVE_OPTION) {
         field.setText(chooser.getSelectedFile().getAbsolutePath());
@@ -322,6 +324,7 @@ class Gui {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+      logDebug("GUI: next button callback called");
       final File mmcInstancesFolder = new File(mmcField.getText());
       final File zipFile = new File(zipField.getText());
       if (!mmcInstancesFolder.isDirectory()) {
@@ -351,6 +354,7 @@ class Gui {
         loadingFrame.setLocation(initFrame.getLocation());
         loadingFrame.setVisible(true);
         initFrame.dispose();
+        logDebug("GUI: init frame disposed, loading frame displayed");
 
         // Unlock main thread
         valuesInitiated.set(true);
@@ -382,8 +386,8 @@ class Gui {
     //TODO REMOVE at production ! custom pre-filled path entries
     mmcField.setText("/home/barasingha/.local/share/multimc/instances");
     zipField.setText("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.01.zip");
-    //mmcField.setText("/doc/morgane/projects/dev/Tuxcraft-Installer/instances");
-    //zipField.setText("/doc/morgane/dwl/TuxCraft-1.1.01.zip");
+    mmcField.setText("/doc/morgane/projects/dev/Tuxcraft-Installer/instances");
+    zipField.setText("/doc/morgane/dwl/TuxCraft-1.1.01.zip");
 
     initFrame.add(encapsulate(null));
     initFrame.add(makePathEntry("MultiMC instances folder:", mmcField,
@@ -402,5 +406,7 @@ class Gui {
     initFrame.setJMenuBar(makeMenu());
     loadingFrame.setJMenuBar(makeMenu());
     logFrame.setJMenuBar(makeMenu());
+
+    logDebug("GUI: setup done");
   }
 }
