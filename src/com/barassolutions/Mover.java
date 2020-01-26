@@ -102,9 +102,9 @@ class Mover {
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) {
       if (exc instanceof FileSystemLoopException) {
-        Gui.logWarning("[!] cycle detected: " + file);
+        Gui.logWarning("cycle detected: " + file);
       } else {
-        Gui.logWarning(String.format("[!] Unable to copy: %s: %s%n\n", file, exc));
+        Gui.logWarning(String.format("Unable to copy: %s: %s%n\n", file, exc));
       }
       return CONTINUE;
     }
