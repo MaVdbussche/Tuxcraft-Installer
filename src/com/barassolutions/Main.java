@@ -209,12 +209,11 @@ public class Main {
       Gui.logInfo("Successfully loaded whitelist from " + Values.updateFileName
           + ", size = " + out.size());
     } catch (FileNotFoundException e) {
-      // TODO: not aborting here causes an ugly abort when no `tuxcraft-update.json` is found
-      //  since we will try to copy a deleted directory into a deleted directory
-      Gui.popError("File " + Values.updateFileName + " could not be opened."
-          + "Please make sure your zip archive is correct.");
       deleteRecursively(instanceFolder);
       deleteRecursively(newInstanceFolder);
+      Gui.popError(new Exception(String
+          .format("File %s could not be opened. Please make sure your zip archive is correct.",
+              Values.updateFileName), e));
     } catch (IOException | ParseException e) {
       Gui.popError(e);
       deleteRecursively(instanceFolder);
@@ -230,7 +229,6 @@ public class Main {
     pathsList.forEach(elem -> out.add(Paths.get((String) elem)));
     return out;
   }
-
 
   static class Values {
 

@@ -77,7 +77,7 @@ class Gui {
    *
    * @param msg The error message
    */
-  static void popError(String msg) {
+  private static void popError(String msg) {
     logError(msg);
     JOptionPane.showMessageDialog(null, msg, "Oh no !", JOptionPane.ERROR_MESSAGE);
   }
@@ -108,7 +108,7 @@ class Gui {
     popError(msg.toString());
     logError("Critical error, aborting !");
     dumpLogs();
-    throw new RuntimeException(); // Abort, executing cleanup code of Main
+    throw new RuntimeException(e); // Abort, executing cleanup code of Main
   }
 
   /**

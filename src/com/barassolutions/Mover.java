@@ -20,8 +20,6 @@ import java.util.Set;
 
 class Mover {
 
-  // TODO: Are warnings really warnings ? Log them ? Gui.pop them ?
-
   private static boolean isWhitelisted(Path elem, Set<Path> set) {
     return set.contains(elem);
   }
