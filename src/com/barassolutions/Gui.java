@@ -382,10 +382,10 @@ class Gui {
     logArea.setEditable(false);
 
     //TODO REMOVE at production ! custom pre-filled path entries
-    mmcField.setText("/home/barasingha/.local/share/multimc/instances");
-    zipField.setText("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.01.zip");
-    mmcField.setText("/doc/morgane/projects/dev/Tuxcraft-Installer/instances");
-    zipField.setText("/doc/morgane/dwl/TuxCraft-1.1.01.zip");
+    //mmcField.setText("/home/barasingha/.local/share/multimc/instances");
+    //zipField.setText("/home/barasingha/Nextcloud/Games/Minecraft/TuxCraft-1.1.01.zip");
+    //mmcField.setText("/doc/morgane/projects/dev/Tuxcraft-Installer/instances");
+    //zipField.setText("/doc/morgane/dwl/TuxCraft-1.1.01.zip");
 
     initFrame.add(encapsulate(null));
     initFrame.add(makePathEntry("MultiMC instances folder:", mmcField,
