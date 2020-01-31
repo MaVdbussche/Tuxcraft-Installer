@@ -22,7 +22,7 @@ be available in `target` folder.
 ## Usage
 
 Run the JAR application from any directory. You will be asked the path to the
-zipped MultiMC instance to install and the `instances` folder of your MultiMV
+zipped MultiMC instance to install and the `instances` folder of your MultiMC
 installation.
 
 Once this is done, the installer detects any previously installed TuxCraft
