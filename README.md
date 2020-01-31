@@ -1,6 +1,6 @@
 # Tuxcraft-Installer
 
-*Copyright © 2019 MaVdbussche and Morgane Austreelis*
+*Copyright © 2020 MaVdbussche/Barasingha and Morgane Austreelis*
 
 Tuxcraft installer is a [MultiMC](https://multimc.org/) instance installer
 primarily designed for the semi-private **Tuxcraft modpack**.
