@@ -27,7 +27,7 @@ class Mover {
   /**
    * Simple FileVisitor implementation for our use-case.
    *
-   * @author code inspired by https://docs.oracle.com/javase/tutorial/essential/io/examples/Copy.java
+   * @author code inspired by <a href="https://docs.oracle.com/javase/tutorial/essential/io/examples/Copy.java">Copy.java</a>
    */
   static class CopyFileVisitor extends SimpleFileVisitor<Path> {
 

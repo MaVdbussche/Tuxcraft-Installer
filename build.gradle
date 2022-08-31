@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    maven {
+        url "https://repo.maven.apache.org/maven2"
+    }
+}
+
+group = 'com.barassolutions'
+version = '1.0-SNAPSHOT'
+description = """Tuxcraft-Installer"""
+sourceCompatibility = 11
+targetCompatibility = 11
+
+dependencies {
+    implementation('net.lingala.zip4j:zip4j:2.11.1') {
+        because 'Library used to create and open zip files'
+    }
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+java { //Asking the build task to create other jars as well
+    withSourcesJar()
+}
+
+application { // Allowing to create the shell script to launch the jar automagically
+    manifest {
+        attributes(
+                'Main-Class': 'com.barassolutions.Main'
+        )
+    }
+    mainClass = 'com.barassolutions.Main'
+    applicationName = 'tuxcraft-installer'
+    applicationDefaultJvmArgs = []
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.barassolutions.Main'
+        )
+    }
+}
+
+task uberJar(type: Jar) {
+    manifest {
+        attributes(
+                'Main-Class': 'com.barassolutions.Main'
+        )
+    }
+    archiveClassifier = 'uberr'
+    baseName = project.name + '-all'
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll {it.name.endsWith('jar').collect {zipTree(it)}}
+    }
+}
+
+//distributions {
+//    main {
+//        contents {
+//        }
+//    }
+//}
