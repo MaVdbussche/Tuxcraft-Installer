@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    maven {
+        url "https://repo.maven.apache.org/maven2"
+    }
+}
+
+group = 'com.barassolutions'
+version = '1.0-SNAPSHOT'
+description = "Tuxcraft-Installer"
+sourceCompatibility = 11
+targetCompatibility = 11
+
+configurations {
+    // We create different dependency configurations
+    // See https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_plugin_and_dependency_management
+    extraLibsForImplementation
+    extraLibsForCompileOnly
+    extraLibsForRuntimeOnly
+    // etc.
+}
+
+dependencies {
+    extraLibsForImplementation 'net.lingala.zip4j:zip4j:2.11.1', 'com.googlecode.json-simple:json-simple:1.1.1'
+    //extraLibsForCompileOnly something
+    //extraLibsForRuntimeOnly something else
+    configurations.implementation.extendsFrom(configurations.extraLibsForImplementation)
+    configurations.compileOnly.extendsFrom(configurations.extraLibsForCompileOnly)
+    configurations.runtimeOnly.extendsFrom(configurations.extraLibsForRuntimeOnly)
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+
+java { //Asking the build task to create other jars as well
+    // Not that this source jar will not include dependencies, but only the sources of this project
+    withSourcesJar()
+}
+
+//application { // Allowing to create the shell script to launch the jar automagically
+//    manifest {
+//        attributes('Main-Class': 'com.barassolutions.Main')
+//    }
+//    mainClass = 'com.barassolutions.Main'
+//    applicationName = 'tuxcraft-installer'
+//    applicationDefaultJvmArgs = []
+//}
+
+jar {
+    duplicatesStrategy = 'WARN'
+    from {
+        configurations.extraLibsForImplementation.collect {it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes('Main-Class': 'com.barassolutions.Main')
+    }
+}

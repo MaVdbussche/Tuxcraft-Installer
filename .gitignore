@@ -24,9 +24,14 @@ hs_err_pid*
 
 # IntelliJ project files
 .idea/*
+/Tuxcraft-Installer.iml
 
-# Maven build dir
+# Build dir
 target/*
+build/*
 
 # Common manual tests dir
 instances/*
+
+# Gradle cache
+.gradle/*
